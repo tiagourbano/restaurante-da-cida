@@ -337,11 +337,12 @@ onMounted(carregarDados);
                    </button>
                 </div>
                 <ul class="lista-nomes">
-                   <li v-for="p in set.pedidos" :key="p.pedidoId">
-                      {{ p.funcionarioNome }} <span class="detalhe-tam">({{ p.tamanhoNome }})</span>
-                      <span v-if="p.observacao || p.opcoesEscolhidasString" class="tem-obs">⚠️</span>
-                      <button @click.stop="abrirEdicao(p.pedidoId)" class="btn-editar">✏️</button>
-                   </li>
+                  <li v-for="p in set.pedidos" :key="p.pedidoId">
+                    <span v-if="p.isAniversariante" title="Aniversariante do Dia!" style="font-size: 1.2em; margin-right: 5px;">🎂</span>
+                    {{ p.funcionarioNome }} <span class="detalhe-tam">({{ p.tamanhoNome }})</span>
+                    <span v-if="p.observacao || p.opcoesEscolhidasString" class="tem-obs">⚠️</span>
+                    <button @click.stop="abrirEdicao(p.pedidoId)" class="btn-editar">✏️</button>
+                  </li>
                 </ul>
              </div>
           </div>

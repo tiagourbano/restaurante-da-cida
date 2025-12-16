@@ -4,6 +4,10 @@ defineProps(['pedido']);
 
 <template>
   <div class="etiqueta-termica">
+    <div v-if="pedido.isAniversariante" class="faixa-niver">
+      🎉 FELIZ ANIVERSÁRIO! 🎂
+    </div>
+
     <div class="cabecalho">
       <span class="empresa">{{ pedido.empresaNome }}</span>
       <span class="setor">{{ pedido.setorNome }}</span>
@@ -44,6 +48,19 @@ defineProps(['pedido']);
   page-break-inside: avoid; /* Tenta não quebrar a etiqueta no meio */
 }
 
+/* ESTILO DA FAIXA DE ANIVERSÁRIO */
+.faixa-niver {
+  background: black;
+  color: white;
+  text-align: center;
+  font-weight: 900;
+  font-size: 16px;
+  padding: 5px;
+  margin-bottom: 5px;
+  border-radius: 4px; /* Arredondado na tela */
+  text-transform: uppercase;
+}
+
 .cabecalho { display: flex; justify-content: space-between; font-size: 12px; border-bottom: 1px solid black; }
 .nome-funcionario { font-size: 18px; font-weight: 900; margin: 5px 0; text-transform: uppercase; line-height: 1.1; }
 .tamanho { font-size: 16px; margin-bottom: 5px; }
@@ -65,6 +82,13 @@ defineProps(['pedido']);
     margin: 0;
     padding: 10px 0;
     page-break-after: always; /* Força cortar página/pular para proxima etiqueta */
+  }
+
+  .faixa-niver {
+    border-radius: 0; /* Quadrado no papel */
+    border: 2px solid black; /* Garante contraste */
+    -webkit-print-color-adjust: exact; /* Força imprimir o fundo preto */
+    print-color-adjust: exact;
   }
 }
 </style>

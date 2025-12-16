@@ -18,6 +18,13 @@ exports.getPedidosDoDia = async (req, res) => {
                 s.nome as setor_nome,
                 e.id as empresa_id,
                 e.nome as empresa_nome,
+                CASE
+                    WHEN f.data_nascimento IS NOT NULL
+                         AND MONTH(f.data_nascimento) = MONTH(c.data_servico)
+                         AND DAY(f.data_nascimento) = DAY(c.data_servico)
+                    THEN 1
+                    ELSE 0
+                END as is_aniversariante,
 
                 -- Agrupa nomes das opções separando por vírgula
                 (
