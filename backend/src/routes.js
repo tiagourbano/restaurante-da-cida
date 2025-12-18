@@ -18,12 +18,14 @@ const SetorController = require('./controllers/SetorController');
 const RelatorioController = require('./controllers/RelatorioController');
 const EmpresaController = require('./controllers/EmpresaController');
 const GerencialController = require('./controllers/GerencialController');
+const UsuarioController = require('./controllers/UsuarioController');
 
 // Rotas Publicas (Considerando que está numa intranet/rede fechada)
 router.post('/login', AuthController.login);
 router.get('/dados-pedido', PedidoController.getDadosIniciais); // Front chama ao carregar a tela
 router.post('/pedido', PedidoController.criarPedido);
 
+router.get('/setup-admin', AuthController.criarAdminInicial);
 router.post('/admin/login', AuthController.loginAdmin);
 router.get('/admin/pedidos', authMiddleware, AdminController.getPedidosDoDia);
 router.get('/admin/pedidos/:id', authMiddleware, AdminController.getDetalhesPedido);
@@ -64,5 +66,11 @@ router.patch('/admin/opcoes/status', authMiddleware, GerencialController.toggleO
 // Cardápios (Histórico)
 router.get('/admin/cardapios', authMiddleware, GerencialController.listarCardapiosRecentes);
 router.get('/admin/cardapios-mes', authMiddleware, GerencialController.listarCardapiosPorMes);
+
+// Usuarios
+router.get('/admin/usuarios', authMiddleware, UsuarioController.listarUsuarios);
+router.post('/admin/usuarios', authMiddleware, UsuarioController.salvarUsuario);
+router.patch('/admin/usuarios/status', authMiddleware, UsuarioController.toggleStatus);
+router.delete('/admin/usuarios/:id', authMiddleware, UsuarioController.excluirUsuario);
 
 module.exports = router;

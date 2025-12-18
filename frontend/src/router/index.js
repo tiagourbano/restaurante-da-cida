@@ -29,17 +29,20 @@ const router = createRouter({
         {
           path: '', // Caminho vazio = /admin (Dashboard/Expedição)
           name: 'admin-dashboard',
-          component: () => import('../views/AdminView.vue')
+          component: () => import('../views/AdminView.vue'),
+          meta: { roles: ['ADMIN'] },
         },
         {
           path: 'cadastros', // = /admin/cadastros
           name: 'admin-cadastros',
-          component: () => import('../views/CadastrosView.vue')
+          component: () => import('../views/CadastrosView.vue'),
+          meta: { roles: ['ADMIN'] },
         },
         {
           path: 'relatorios', // = /admin/relatorios
           name: 'admin-relatorios',
-          component: () => import('../views/RelatoriosView.vue')
+          component: () => import('../views/RelatoriosView.vue'),
+          meta: { roles: ['ADMIN', 'CLIENTE'] },
         }
       ]
     },
@@ -48,13 +51,31 @@ const router = createRouter({
 
 router.beforeEach((to, from, next) => {
   const token = localStorage.getItem('adminToken');
+  const usuarioRaw = localStorage.getItem('adminUser');
+  const usuario = usuarioRaw ? JSON.parse(usuarioRaw) : null;
 
-  // Se a rota precisa de admin e não tem token
-  if (to.meta.requiresAdmin && !token) {
-    next('/admin/login'); // Manda pro login
-  } else {
-    next(); // Deixa passar
+  // 1. Verifica se precisa de login
+  if (to.matched.some(record => record.meta.requiresAdmin)) {
+    if (!token) {
+      return next('/admin/login');
+    }
   }
+
+  // 2. Verifica Permissões de Perfil (Roles)
+  // Olhamos se a rota tem 'roles' definidos
+  if (to.meta.roles && usuario) {
+    if (!to.meta.roles.includes(usuario.perfil)) {
+      // Se o usuário não tem o perfil necessário:
+      // Se for CLIENTE tentando acessar coisa de ADMIN, joga pro relatorio
+      if (usuario.perfil === 'CLIENTE') {
+         return next('/admin/relatorios');
+      } else {
+         return next('/admin');
+      }
+    }
+  }
+
+  next();
 });
 
 export default router

@@ -3,6 +3,7 @@ import { ref, onMounted, computed } from 'vue';
 import api from '../services/api';
 
 const empresas = ref([]);
+const disableEmpresas = ref(false);
 const setores = ref([]);
 const dadosRelatorio = ref([]);
 const loading = ref(false);
@@ -29,6 +30,13 @@ onMounted(async () => {
   const primeiroDia = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
   filtro.value.dataInicio = primeiroDia.toISOString().split('T')[0];
   filtro.value.dataFim = hoje.toISOString().split('T')[0];
+
+  const usuarioRaw = localStorage.getItem('adminUser');
+  const usuario = usuarioRaw ? JSON.parse(usuarioRaw) : null;
+  if (usuario.perfil === 'CLIENTE') {
+    disableEmpresas.value = true;
+    filtro.value.empresaId = usuario.empresaId
+  }
 });
 
 const gerarRelatorio = async () => {
@@ -61,7 +69,7 @@ const toMoney = (val) => `R$ ${parseFloat(val).toFixed(2)}`;
     <div class="filtros no-print">
       <div class="campo">
         <label>Empresa:</label>
-        <select v-model="filtro.empresaId">
+        <select v-model="filtro.empresaId" :disabled="disableEmpresas">
           <option value="">Todas</option>
           <option v-for="e in empresas" :key="e.id" :value="e.id">{{ e.nome }}</option>
         </select>

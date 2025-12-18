@@ -3,8 +3,9 @@ const excel = require('exceljs');
 const { keysToCamel } = require('../utils/converter');
 
 // --- Lógica Comum: Busca e Agrupa Dados ---
-async function buscarDadosAgrupados(filtros) {
+async function buscarDadosAgrupados(filtros, usuario) {
     const { empresaId, setorId, dataInicio, dataFim } = filtros;
+    const { perfil, empresaId: usuarioEmpresaId } = usuario;
 
     let query = `
         SELECT
@@ -32,10 +33,15 @@ async function buscarDadosAgrupados(filtros) {
     const params = [];
 
     // Aplica Filtros Dinâmicos
-    if (empresaId) { query += ' AND e.id = ?'; params.push(empresaId); }
+    if (perfil === 'CLIENTE') {
+        // Se for cliente, FORÇA o filtro da empresa dele
+        query += ' AND e.id = ?';
+        params.push(usuarioEmpresaId);
+    } else if (empresaId) { query += ' AND e.id = ?'; params.push(empresaId); }
     if (setorId)   { query += ' AND s.id = ?'; params.push(setorId); }
     if (dataInicio){ query += ' AND c.data_servico >= ?'; params.push(dataInicio); }
     if (dataFim)   { query += ' AND c.data_servico <= ?'; params.push(dataFim); }
+
 
     // ORDENAÇÃO É CRUCIAL PARA O AGRUPAMENTO FUNCIONAR
     query += ' ORDER BY e.nome, s.nome, c.data_servico, f.nome';
@@ -114,7 +120,7 @@ async function buscarDadosAgrupados(filtros) {
 // --- ROTA 1: JSON para Tela ---
 exports.gerarRelatorioTela = async (req, res) => {
     try {
-        const dados = await buscarDadosAgrupados(req.query);
+        const dados = await buscarDadosAgrupados(req.query, req.usuario);
         res.json(keysToCamel(dados));
     } catch (error) {
         console.error(error);
@@ -125,7 +131,7 @@ exports.gerarRelatorioTela = async (req, res) => {
 // --- ROTA 2: Exportar Excel ---
 exports.exportarExcel = async (req, res) => {
     try {
-        const dados = await buscarDadosAgrupados(req.query);
+        const dados = await buscarDadosAgrupados(req.query, req.usuario);
 
         const workbook = new excel.Workbook();
         const worksheet = workbook.addWorksheet('Fechamento');

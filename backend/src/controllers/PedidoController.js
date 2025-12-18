@@ -48,6 +48,13 @@ async function verificarPermissaoHorario(setorId) {
     return { permitido: true };
 }
 
+// Helper para pegar hora atual como Objeto Date, mas ajustado para SP
+const getAgoraSP = () => {
+    // Cria uma string no formato ISO baseada no fuso de SP
+    const strData = new Date().toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' });
+    return new Date(strData);
+};
+
 // Função para pegar a data/hora atual de SP no formato MySQL
 const getDataHoraSP = () => {
   return new Date().toLocaleString('sv-SE', {
@@ -76,14 +83,37 @@ exports.getDadosIniciais = async (req, res) => {
             });
         }
 
-        // ... (Restante do código continua igual) ...
-        const hoje = new Date().toISOString().split('T')[0];
-        const [cardapio] = await db.execute('SELECT * FROM cardapios WHERE data_servico = ?', [hoje]);
+        const [setorRows] = await db.execute(
+            'SELECT hora_corte_visualizacao FROM setores WHERE id = ?',
+            [setorId]
+        );
+
+        // Default: Só vira o dia à meia-noite (23:59) se não tiver configuração
+        const horaCorteStr = (setorRows[0]?.hora_corte_visualizacao) || '23:59:59';
+
+        const agora = getAgoraSP();
+        const horaAtualStr = agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+        let dataAlvo = agora;
+
+        // Se a hora atual já passou do corte (ex: agora é 22:00 e o corte é 17:00)
+        // Então o funcionário já deve ver o cardápio de AMANHÃ.
+        if (horaAtualStr >= horaCorteStr) {
+            // Adiciona 1 dia
+            dataAlvo.setDate(dataAlvo.getDate() + 1);
+        }
+
+        const dataAlvoFormatada = dataAlvo.toISOString().split('T')[0];
+
+        // 4. BUSCAR CARDÁPIO (Usando a dataAlvo)
+        const [cardapio] = await db.execute('SELECT * FROM cardapios WHERE data_servico = ?', [dataAlvoFormatada]);
         const [tamanhos] = await db.execute('SELECT * FROM tamanhos_marmita WHERE ativo = TRUE');
         const [opcoes] = await db.execute('SELECT * FROM opcoes_extras WHERE ativo = TRUE ORDER BY ordem_exibicao ASC');
 
         if (cardapio.length === 0) {
-            return res.status(404).json({ message: 'Nenhum cardápio cadastrado para hoje.' });
+            // Ajuste na mensagem para ficar claro qual dia estamos procurando
+            const diaFormatado = dataAlvo.toLocaleDateString('pt-BR');
+            return res.status(404).json({ message: `Ainda não há cardápio cadastrado para ${diaFormatado}.` });
         }
 
         const resposta = keysToCamel({

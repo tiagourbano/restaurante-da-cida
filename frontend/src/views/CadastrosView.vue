@@ -8,6 +8,7 @@ import CrudEmpresas from '../components/admin/CrudEmpresas.vue';
 import CrudFuncionarios from '../components/admin/CrudFuncionarios.vue';
 import CrudSetores from '../components/admin/CrudSetores.vue';
 import CalendarioCardapio from '../components/admin/CalendarioCardapio.vue';
+import CrudUsuarios from '../components/admin/CrudUsuarios.vue';
 
 const abaAtiva = ref('cardapio');
 const loading = ref(false);
@@ -167,6 +168,7 @@ const mudarAba = (aba) => {
       <button :class="{ ativo: abaAtiva === 'empresas' }" @click="mudarAba('empresas')">🏢 Empresas</button>
       <button :class="{ ativo: abaAtiva === 'setores' }" @click="mudarAba('setores')">🏭 Setores</button>
       <button :class="{ ativo: abaAtiva === 'horarios' }" @click="mudarAba('horarios')">⏰ Horários/Setores</button>
+      <button :class="{ ativo: abaAtiva === 'usuarios' }" @click="mudarAba('usuarios')">🔐 Usuários do Sistema</button>
       <button :class="{ ativo: abaAtiva === 'funcionarios' }" @click="mudarAba('funcionarios')">👥 Funcionários</button>
       <button :class="{ ativo: abaAtiva === 'importarFuncionarios' }" @click="mudarAba('importarFuncionarios')">👥 Importar Funcionários</button>
     </div>
@@ -267,6 +269,7 @@ const mudarAba = (aba) => {
     <CrudEmpresas v-if="abaAtiva === 'empresas'" />
     <CrudSetores v-if="abaAtiva === 'setores'" />
     <CrudFuncionarios v-if="abaAtiva === 'funcionarios'" />
+    <CrudUsuarios v-if="abaAtiva === 'usuarios'" />
 
   </div>
 </template>

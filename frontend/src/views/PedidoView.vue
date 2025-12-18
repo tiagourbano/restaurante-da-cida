@@ -119,8 +119,10 @@ const finalizarPedido = async () => {
           :class="{ ativo: tamanhoSelecionado === tam.id }"
           @click="tamanhoSelecionado = tam.id"
         >
+          <br>
           {{ tam.nome }} <br>
-          <small>R$ {{ tam.preco }}</small>
+          <small>&nbsp;</small>
+          <!-- <small>R$ {{ tam.preco }}</small> -->
         </button>
       </div>
     </div>

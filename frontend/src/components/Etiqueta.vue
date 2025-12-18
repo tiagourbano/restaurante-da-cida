@@ -22,7 +22,8 @@ defineProps(['pedido']);
     </div>
 
     <div class="extras" v-if="pedido.opcoesEscolhidasString">
-      ⚠️ {{ pedido.opcoesEscolhidasString }}
+      <!-- ⚠️ -->
+      - <span v-html="pedido.opcoesEscolhidasString.split(' + ').reverse().join('<br />- ')"></span>
     </div>
 
     <div class="obs" v-if="pedido.observacao">
@@ -64,7 +65,7 @@ defineProps(['pedido']);
 .cabecalho { display: flex; justify-content: space-between; font-size: 12px; border-bottom: 1px solid black; }
 .nome-funcionario { font-size: 18px; font-weight: 900; margin: 5px 0; text-transform: uppercase; line-height: 1.1; }
 .tamanho { font-size: 16px; margin-bottom: 5px; }
-.extras { background: #000; color: #fff; font-weight: bold; padding: 2px; font-size: 14px; margin-top: 2px; }
+.extras { color: #000; font-weight: bold; padding: 2px; font-size: 14px; margin-top: 2px; }
 .obs { border: 2px solid black; font-weight: bold; padding: 2px; margin-top: 4px; font-size: 12px; }
 .rodape { font-size: 10px; text-align: right; margin-top: 5px; }
 

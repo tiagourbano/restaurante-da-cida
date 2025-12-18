@@ -1,4 +1,5 @@
 const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
 
 const db = require('../config/db');
 const { keysToCamel } = require('../utils/converter'); // <--- Importou
@@ -52,16 +53,65 @@ exports.login = async (req, res) => {
 };
 
 exports.loginAdmin = async (req, res) => {
-    const { password } = req.body;
+    const { login, password } = req.body;
 
-    if (password !== process.env.ADMIN_PASSWORD) {
-        return res.status(401).json({ message: 'Senha incorreta.' });
+    try {
+        // 1. Busca o usuário pelo login
+        const [rows] = await db.execute(
+            'SELECT * FROM usuarios_sistema WHERE login = ? AND ativo = TRUE',
+            [login]
+        );
+
+        if (rows.length === 0) {
+            return res.status(401).json({ message: 'Usuário ou senha inválidos.' });
+        }
+
+        const usuario = rows[0];
+
+        // 2. Compara a senha digitada com a hash do banco
+        const senhaBate = await bcrypt.compare(password, usuario.senha);
+
+        if (!senhaBate) {
+            return res.status(401).json({ message: 'Usuário ou senha inválidos.' });
+        }
+
+        // 3. Gera o Token com as permissões
+        const token = jwt.sign({
+            id: usuario.id,
+            nome: usuario.nome,
+            perfil: usuario.perfil,       // 'ADMIN' ou 'CLIENTE'
+            empresaId: usuario.empresa_id // ID da empresa ou NULL
+        }, process.env.JWT_SECRET, {
+            expiresIn: '1d'
+        });
+
+        // Retorna dados para o frontend saber o que mostrar
+        res.json({
+            token,
+            usuario: {
+                nome: usuario.nome,
+                perfil: usuario.perfil,
+                empresaId: usuario.empresa_id
+            }
+        });
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Erro ao realizar login.' });
     }
+};
 
-    // Gera o token que expira em 24h
-    const token = jwt.sign({ role: 'admin' }, process.env.JWT_SECRET, {
-        expiresIn: '1d'
-    });
-
-    res.json({ token });
+// --- ROTA TEMPORÁRIA PARA VOCÊ CRIAR O PRIMEIRO ADMIN ---
+// Apague ou comente essa função depois de usar!
+exports.criarAdminInicial = async (req, res) => {
+    const senhaHash = await bcrypt.hash('123456', 10); // Senha padrão: 123456
+    try {
+        await db.execute(
+            `INSERT INTO usuarios_sistema (nome, login, senha, perfil) VALUES (?, ?, ?, ?)`,
+            ['Admin Inicial', 'admin', senhaHash, 'ADMIN']
+        );
+        res.json({ message: 'Admin criado com senha "123456"' });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
 };

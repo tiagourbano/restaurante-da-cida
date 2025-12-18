@@ -1,10 +1,15 @@
 <script setup>
 import { useRouter, useRoute } from 'vue-router';
+import { computed } from 'vue';
 import { useAdminAuthStore } from '../stores/adminAuth';
 
 const router = useRouter();
 const route = useRoute(); // Para saber qual aba está ativa
 const adminStore = useAdminAuthStore();
+
+const isAdmin = computed(() => {
+  return adminStore.usuario && adminStore.usuario.perfil === 'ADMIN';
+});
 
 const sair = () => {
   adminStore.logout();
@@ -25,6 +30,7 @@ const irPara = (caminho) => {
 
       <div class="menu">
         <button
+          v-if="isAdmin"
           :class="{ ativo: route.path === '/admin' }"
           @click="irPara('/admin')"
         >
@@ -32,6 +38,7 @@ const irPara = (caminho) => {
         </button>
 
         <button
+          v-if="isAdmin"
           :class="{ ativo: route.path === '/admin/cadastros' }"
           @click="irPara('/admin/cadastros')"
         >
@@ -56,7 +63,7 @@ const irPara = (caminho) => {
     </main>
 
     <footer class="no-print">
-      Sistema desenvolvido com ❤️ para a Tia.
+      Sistema desenvolvido com ❤️ para a Cida.
     </footer>
   </div>
 </template>

@@ -77,6 +77,7 @@ onMounted(carregarDados);
         <tr>
           <th>Empresa</th>
           <th>Setor</th>
+          <th>Virada do Dia</th>
           <th>Ações</th>
         </tr>
       </thead>
@@ -86,6 +87,7 @@ onMounted(carregarDados);
              <span class="badge-empresa">{{ item.empresaNome }}</span>
           </td>
           <td>{{ item.nome }}</td>
+          <td>{{ item.horaCorteVisualizacao }}</td>
           <td>
             <button @click="abrirModal(item)" class="btn-icon">✏️</button>
             <button @click="excluir(item.id)" class="btn-icon trash">🗑️</button>
@@ -106,6 +108,12 @@ onMounted(carregarDados);
 
         <label>Nome do Setor:</label>
         <input v-model="form.nome" placeholder="Ex: Produção, RH...">
+
+        <label>Virada do Dia (Hora de Corte):</label>
+        <input type="time" v-model="form.horaCorteVisualizacao">
+        <small style="color:#666; font-size:0.8em">
+          Se definido como 17:00, quem acessar após as 17h verá o cardápio de AMANHÃ.
+        </small>
 
         <div class="acoes-modal">
            <button @click="salvar" class="btn-save">Salvar</button>

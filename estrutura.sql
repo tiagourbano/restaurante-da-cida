@@ -12,6 +12,7 @@ CREATE TABLE setores (
     id INT AUTO_INCREMENT PRIMARY KEY,
     empresa_id INT NOT NULL,
     nome VARCHAR(100) NOT NULL,
+    hora_corte_visualizacao TIME DEFAULT '23:59:00',
     FOREIGN KEY (empresa_id) REFERENCES empresas(id)
 );
 
@@ -92,6 +93,19 @@ CREATE TABLE pedido_opcoes_escolhidas (
     FOREIGN KEY (opcao_extra_id) REFERENCES opcoes_extras(id)
 );
 
+-- 10. [NOVA] Tabela de Usuarios do sistema
+-- Aqui fica gravado o perfil de cada usuario
+CREATE TABLE usuarios_sistema (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nome VARCHAR(100) NOT NULL,
+    login VARCHAR(50) NOT NULL UNIQUE, -- Pode ser email ou um usuario simples ex: 'metalurgica'
+    senha VARCHAR(255) NOT NULL, -- Vamos guardar criptografado (Hash)
+    perfil ENUM('ADMIN', 'CLIENTE') NOT NULL DEFAULT 'CLIENTE',
+    empresa_id INT NULL, -- Se for NULL é Admin Geral. Se tiver ID, é restrito.
+    ativo BOOLEAN DEFAULT TRUE,
+    FOREIGN KEY (empresa_id) REFERENCES empresas(id)
+);
+
 -- --- EXEMPLO DE CARGA INICIAL (SEED) PARA VOCÊ ENTENDER ---
 -- INSERT INTO opcoes_extras (nome, tipo, ordem_exibicao) VALUES
 -- ('Com Salada', 'ADICIONAL', 1),
@@ -99,3 +113,7 @@ CREATE TABLE pedido_opcoes_escolhidas (
 -- ('Trocar por Ovo Frito', 'TROCA', 3),
 -- ('Trocar por Omelete', 'TROCA', 4),
 -- ('Trocar por Filé de Frango', 'TROCA', 5);
+
+-- OBS: Essa hash abaixo é um exemplo fictício, você vai gerar a senha real no código em breve.
+-- Se quiser testar agora, instale o bcryptjs e gere um hash, ou use o código de cadastro que faremos abaixo.
+-- INSERT INTO usuarios_sistema (nome, login, senha, perfil, empresa_id) VALUES ('Administrador', 'admin', '$2b$10$A6sOZWUhulsZBgZEqQcxLO/hirG1RsTq8HxFNufVyKNFV9Yj.CQgm', 'ADMIN', NULL);

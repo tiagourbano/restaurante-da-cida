@@ -8,6 +8,7 @@ exports.listarComHorarios = async (req, res) => {
             SELECT
                 s.id as setor_id,
                 s.nome as setor_nome,
+                s.hora_corte_visualizacao,
                 e.nome as empresa_nome,
                 e.id as empresa_id,
                 jp.id as janela_id,
@@ -83,7 +84,10 @@ exports.listarTodos = async (req, res) => {
     try {
         const [rows] = await db.execute(`
             SELECT
-                s.id, s.nome, s.empresa_id,
+                s.id,
+                s.nome,
+                s.empresa_id,
+                s.hora_corte_visualizacao,
                 e.nome as empresa_nome
             FROM setores s
             JOIN empresas e ON s.empresa_id = e.id
@@ -97,7 +101,7 @@ exports.listarTodos = async (req, res) => {
 
 // --- NOVO: SALVAR (CRIAR / EDITAR) ---
 exports.salvarSetor = async (req, res) => {
-    const { id, nome, empresaId } = req.body;
+    const { id, nome, empresaId, horaCorteVisualizacao } = req.body;
 
     if (!nome || !empresaId) {
         return res.status(400).json({ message: 'Nome e Empresa são obrigatórios.' });
@@ -106,10 +110,16 @@ exports.salvarSetor = async (req, res) => {
     try {
         if (id) {
             // Edição
-            await db.execute('UPDATE setores SET nome = ?, empresa_id = ? WHERE id = ?', [nome, empresaId, id]);
+            await db.execute(
+                'UPDATE setores SET nome = ?, empresa_id = ?, hora_corte_visualizacao = ? WHERE id = ?',
+                [nome, empresaId, horaCorteVisualizacao || '23:59:59', id]
+            );
         } else {
             // Criação
-            await db.execute('INSERT INTO setores (nome, empresa_id) VALUES (?, ?)', [nome, empresaId]);
+            await db.execute(
+                'INSERT INTO setores (nome, empresa_id, hora_corte_visualizacao) VALUES (?, ?, ?)',
+                [nome, empresaId, horaCorteVisualizacao || '23:59:59']
+            );
         }
         res.json({ message: 'Setor salvo com sucesso!' });
     } catch (error) {
