@@ -123,7 +123,7 @@ exports.gerarRelatorioTela = async (req, res) => {
         const dados = await buscarDadosAgrupados(req.query, req.usuario);
         res.json(keysToCamel(dados));
     } catch (error) {
-        console.error(error);
+        console.error(`[API] ${error}`);
         res.status(500).json({ message: 'Erro ao gerar relatório' });
     }
 };
@@ -186,7 +186,7 @@ exports.exportarExcel = async (req, res) => {
         res.end();
 
     } catch (error) {
-        console.error(error);
+        console.error(`[API] ${error}`);
         res.status(500).send('Erro ao gerar Excel');
     }
 };

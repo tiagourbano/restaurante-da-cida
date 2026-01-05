@@ -79,7 +79,7 @@ exports.salvarUsuario = async (req, res) => {
         res.json({ message: 'Usuário salvo com sucesso!' });
 
     } catch (error) {
-        console.error(error);
+        console.error(`[API] ${error}`);
         res.status(500).json({ message: 'Erro ao salvar usuário.' });
     } finally {
         connection.release();

@@ -50,7 +50,7 @@ exports.listarComHorarios = async (req, res) => {
         res.json(keysToCamel(resposta));
 
     } catch (error) {
-        console.error(error);
+        console.error(`[API] ${error}`);
         res.status(500).json({ message: 'Erro ao listar setores' });
     }
 };
@@ -123,7 +123,7 @@ exports.salvarSetor = async (req, res) => {
         }
         res.json({ message: 'Setor salvo com sucesso!' });
     } catch (error) {
-        console.error(error);
+        console.error(`[API] ${error}`);
         res.status(500).json({ message: 'Erro ao salvar setor.' });
     }
 };

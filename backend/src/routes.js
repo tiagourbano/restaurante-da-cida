@@ -20,6 +20,10 @@ const EmpresaController = require('./controllers/EmpresaController');
 const GerencialController = require('./controllers/GerencialController');
 const UsuarioController = require('./controllers/UsuarioController');
 
+router.get('/health', (req, res) => {
+  res.status(200).json({ status: "ok" });
+});
+
 // Rotas Publicas (Considerando que está numa intranet/rede fechada)
 router.post('/login', AuthController.login);
 router.get('/dados-pedido', PedidoController.getDadosIniciais); // Front chama ao carregar a tela

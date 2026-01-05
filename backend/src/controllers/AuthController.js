@@ -47,7 +47,7 @@ exports.login = async (req, res) => {
         res.json(funcionarioFormatado);
 
     } catch (error) {
-        console.error(error);
+        console.error(`[API] ${error}`);
         res.status(500).json({ message: 'Erro no servidor.' });
     }
 };
@@ -96,7 +96,7 @@ exports.loginAdmin = async (req, res) => {
         });
 
     } catch (error) {
-        console.error(error);
+        console.error(`[API] ${error}`);
         res.status(500).json({ message: 'Erro ao realizar login.' });
     }
 };

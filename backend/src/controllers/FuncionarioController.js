@@ -75,7 +75,7 @@ exports.importarExcel = async (req, res) => {
 
     } catch (error) {
         await connection.rollback();
-        console.error(error);
+        console.error(`[API] ${error}`);
         res.status(500).json({ message: 'Erro ao processar arquivo Excel.' });
     } finally {
         connection.release();
@@ -118,7 +118,7 @@ exports.listarFuncionarios = async (req, res) => {
         res.json(keysToCamel(rows));
 
     } catch (error) {
-        console.error(error);
+        console.error(`[API] ${error}`);
         res.status(500).json({ message: 'Erro ao listar funcionários' });
     }
 };
@@ -147,7 +147,7 @@ exports.salvarManual = async (req, res) => {
         if (error.code === 'ER_DUP_ENTRY') {
             return res.status(400).json({ message: 'Já existe um funcionário com este RA/CPF.' });
         }
-        console.error(error);
+        console.error(`[API] ${error}`);
         res.status(500).json({ message: 'Erro ao salvar.' });
     }
 };

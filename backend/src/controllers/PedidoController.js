@@ -124,7 +124,7 @@ exports.getDadosIniciais = async (req, res) => {
 
         res.json(resposta);
     } catch (error) {
-        console.error(error);
+        console.error(`[API] ${error}`);
         res.status(500).json({ message: 'Erro ao buscar dados.' });
     }
 };
@@ -167,7 +167,7 @@ exports.criarPedido = async (req, res) => {
     } catch (error) {
         await connection.rollback();
         if (error.code === 'ER_DUP_ENTRY') return res.status(400).json({ message: 'Você já fez um pedido hoje! Para alterar, ligue para o restaurante.' });
-        console.error(error);
+        console.error(`[API] ${error}`);
         res.status(500).json({ message: error.message || 'Erro ao salvar pedido.' });
     } finally {
         connection.release();

@@ -48,7 +48,7 @@ exports.getPedidosDoDia = async (req, res) => {
         res.json(keysToCamel(rows));
 
     } catch (error) {
-        console.error(error);
+        console.error(`[API] ${error}`);
         res.status(500).json({ message: 'Erro ao buscar relatórios.' });
     }
 };
@@ -82,7 +82,7 @@ exports.getResumoProducao = async (req, res) => {
         res.json(keysToCamel({ tamanhos, extras }));
 
     } catch (error) {
-        console.error(error);
+        console.error(`[API] ${error}`);
         res.status(500).json({ message: 'Erro ao gerar resumo.' });
     }
 };

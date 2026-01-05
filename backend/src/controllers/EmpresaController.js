@@ -23,7 +23,7 @@ exports.listarEmpresas = async (req, res) => {
 
         res.json(keysToCamel(rows));
     } catch (error) {
-        console.error(error);
+        console.error(`[API] ${error}`);
         res.status(500).json({ message: 'Erro ao listar empresas' });
     }
 };
