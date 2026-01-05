@@ -23,9 +23,9 @@ jobs:
 
       - name: Deploy via SSH
         run: |
-          ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=yes \
-            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
-              cd /opt/apps/marmita-da-cida
-              git pull origin main
-              docker compose up -d --build
-            EOF
+          ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=yes deploy@SEU_IP << 'EOF'
+          cd /opt/apps/marmita-da-cida
+          git pull origin main
+          docker compose up -d --build
+          EOF
+
