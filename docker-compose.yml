@@ -2,43 +2,36 @@ version: "3.9"
 
 services:
   backend:
-    container_name: marmita-da-cida-backend
-    build:
-      context: ./backend
+    container_name: marmita-backend
+    build: ./backend
     env_file:
       - .env
     restart: always
 
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.marmita-da-cida-api.rule=Host(`marmita-da-cida.timatech.com.br`) && PathPrefix(`/api`)"
-      - "traefik.http.routers.marmita-da-cida-api.entrypoints=websecure"
-      - "traefik.http.routers.marmita-da-cida-api.tls.certresolver=le"
-      - "traefik.http.routers.marmita-da-cida-api.priority=100"
-      - "traefik.http.services.marmita-da-cida-api.loadbalancer.server.port=3000"
+      - "traefik.http.routers.marmita-api.rule=Host(`marmita-da-cida.timatech.com.br`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.marmita-api.entrypoints=websecure"
+      - "traefik.http.routers.marmita-api.tls.certresolver=le"
+      - "traefik.http.services.marmita-api.loadbalancer.server.port=3000"
 
     networks:
       - infra
 
   frontend:
-    container_name: marmita-da-cida-frontend
+    container_name: marmita-frontend
     build:
       context: ./frontend
       args:
         VITE_API_URL: ${VITE_API_URL}
-    env_file:
-      - .env
-
     restart: always
 
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.marmita-da-cida-front.rule=Host(`marmita-da-cida.timatech.com.br`)"
-      - "traefik.http.routers.marmita-da-cida-front.entrypoints=websecure"
-      - "traefik.http.routers.marmita-da-cida-front.tls.certresolver=le"
-      - "traefik.http.routers.marmita-da-cida-front.priority=1"
-      - "traefik.http.services.marmita-da-cida-front.loadbalancer.server.port=80"
-
+      - "traefik.http.routers.marmita-front.rule=Host(`marmita-da-cida.timatech.com.br`)"
+      - "traefik.http.routers.marmita-front.entrypoints=websecure"
+      - "traefik.http.routers.marmita-front.tls.certresolver=le"
+      - "traefik.http.services.marmita-front.loadbalancer.server.port=80"
 
     networks:
       - infra
