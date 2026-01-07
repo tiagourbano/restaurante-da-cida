@@ -2,7 +2,8 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 
 const db = require('../config/db');
-const { keysToCamel } = require('../utils/converter'); // <--- Importou
+const logger = require('../config/logger');
+const { keysToCamel } = require('../utils/converter');
 
 exports.login = async (req, res) => {
     const { raCpf } = req.body; // <--- Esperamos camelCase na entrada também (opcional)
@@ -44,10 +45,12 @@ exports.login = async (req, res) => {
         // O front recebe: { empresaId: 1, trabalhaFimSemana: 0 }
         const funcionarioFormatado = keysToCamel(funcionarioRaw);
 
+        logger.info('Funcionário logado', { id: funcionarioFormatado.id, nome: funcionarioFormatado.nome, ra: funcionarioFormatado.raCpf });
+
         res.json(funcionarioFormatado);
 
     } catch (error) {
-        console.error(`[API] ${error}`);
+        logger.error('Erro ao logar funcionário', { erro: error?.message, error });
         res.status(500).json({ message: 'Erro no servidor.' });
     }
 };
@@ -85,6 +88,8 @@ exports.loginAdmin = async (req, res) => {
             expiresIn: '1d'
         });
 
+        logger.info('Admin logado', { nome: usuario.nome, perfil: usuario.perfil, empresaId: usuario.empresa_id });
+
         // Retorna dados para o frontend saber o que mostrar
         res.json({
             token,
@@ -96,7 +101,7 @@ exports.loginAdmin = async (req, res) => {
         });
 
     } catch (error) {
-        console.error(`[API] ${error}`);
+        logger.error('Erro ao logar funcionário', { erro: error?.message, error });
         res.status(500).json({ message: 'Erro ao realizar login.' });
     }
 };
