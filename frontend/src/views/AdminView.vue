@@ -423,5 +423,9 @@ h1 { margin: 0; color: #2c3e50; font-size: 1.8rem; }
 .row-troca { color: #e65100; background: #fff8e1; }
 .row-extra { color: #b71c1c; }
 .area-impressao-real { display: none; }
-@media print { .no-print { display: none !important; } .area-impressao-real { display: block; } .expedicao-container { padding: 0; margin: 0; max-width: none; } }
+@media print {
+  .no-print { display: none !important; }
+  .area-impressao-real { display: block; }
+  .expedicao-container { padding: 0; margin: 0; max-width: none; }
+}
 </style>

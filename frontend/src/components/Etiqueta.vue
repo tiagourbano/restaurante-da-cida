@@ -67,7 +67,7 @@ defineProps(['pedido']);
 .tamanho { font-size: 16px; margin-bottom: 5px; }
 .extras { color: #000; font-weight: bold; padding: 2px; font-size: 14px; margin-top: 2px; }
 .obs { border: 2px solid black; font-weight: bold; padding: 2px; margin-top: 4px; font-size: 12px; }
-.rodape { font-size: 10px; text-align: right; margin-top: 5px; }
+.rodape { font-size: 10px; text-align: right; margin-top: 5px; font-weight: 700; }
 
 /* CSS ESPECÍFICO PARA A IMPRESSORA */
 @media print {
@@ -83,6 +83,13 @@ defineProps(['pedido']);
     margin: 0;
     padding: 10px 0;
     page-break-after: always; /* Força cortar página/pular para proxima etiqueta */
+    break-after: always;
+  }
+
+  .etiqueta-termica:last-child {
+    page-break-after: auto;
+    break-after: auto;
+    margin-bottom: 0;
   }
 
   .faixa-niver {

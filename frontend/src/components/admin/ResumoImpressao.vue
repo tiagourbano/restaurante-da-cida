@@ -75,7 +75,19 @@ li { font-size: 14px; margin-bottom: 2px; display: flex; gap: 10px; }
 .fim { text-align: center; font-size: 10px; margin-top: 15px; }
 
 @media print {
-  .resumo-termico { border: none; width: 100%; margin: 0; page-break-after: always; }
+  .resumo-termico {
+    border: none;
+    width: 100%;
+    margin: 0;
+    page-break-after: always;
+    break-after: always;
+  }
+  .resumo-termico:last-child {
+    page-break-after: auto;
+    break-after: auto;
+    margin-bottom: 0;
+  }
+
   .secao h3 { background: none; border-bottom: 1px solid black; font-weight: bold; }
 }
 </style>
