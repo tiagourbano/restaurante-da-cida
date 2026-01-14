@@ -85,7 +85,7 @@ exports.loginAdmin = async (req, res) => {
             perfil: usuario.perfil,       // 'ADMIN' ou 'CLIENTE'
             empresaId: usuario.empresa_id // ID da empresa ou NULL
         }, process.env.JWT_SECRET, {
-            expiresIn: '1d'
+            expiresIn: '7d'
         });
 
         logger.info('Admin logado', { nome: usuario.nome, perfil: usuario.perfil, empresaId: usuario.empresa_id });
