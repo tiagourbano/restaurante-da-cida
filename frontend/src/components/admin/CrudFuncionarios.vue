@@ -246,7 +246,7 @@ const formatarData = (dataIso) => {
           </td>
           <td>
             <button @click="abrirModal(f)" class="btn-edit">✏️</button>
-            <button @click="excluir(f.id)" class="btn-trash">🗑️</button>
+            <!-- <button @click="excluir(f.id)" class="btn-trash">🗑️</button> -->
           </td>
         </tr>
       </tbody>
