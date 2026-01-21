@@ -39,7 +39,10 @@ onMounted(async () => {
   }
   try {
     const res = await api.get('/dados-pedido', {
-      params: { setorId: authStore.funcionario.setorId }
+      params: {
+        setorId: authStore.funcionario.setorId,
+        funcionarioId: authStore.funcionario.id,
+      }
     });
     dados.value = res.data;
   } catch (error) {
@@ -93,8 +96,14 @@ const finalizarPedido = async () => {
 
 <template>
   <div v-if="bloqueado && !loading" class="bloqueio-container">
-    <div class="icone">⏰</div>
-    <h2>Ops! Não é possível pedir agora.</h2>
+    <div class="icone">
+       {{ mensagemBloqueio.includes('encerrado') ? '⏰' : '✅' }}
+    </div>
+
+    <h2>
+       {{ mensagemBloqueio.includes('encerrado') ? 'Ops! Não é possível pedir agora.' : 'Pedido Já Realizado' }}
+    </h2>
+
     <p class="msg-aviso" v-html="mensagemBloqueio"></p>
     <p class="instrucao">Por favor, entre em contato com o restaurante por telefone.</p>
     <button @click="router.push('/login')" class="btn-voltar">Voltar</button>

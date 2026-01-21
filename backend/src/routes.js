@@ -34,6 +34,8 @@ router.post('/admin/login', AuthController.loginAdmin);
 router.get('/admin/pedidos', authMiddleware, AdminController.getPedidosDoDia);
 router.get('/admin/pedidos/:id', authMiddleware, AdminController.getDetalhesPedido);
 router.put('/admin/pedidos/:id', authMiddleware, AdminController.atualizarPedido);
+router.delete('/admin/pedidos/:id', authMiddleware, AdminController.excluirPedido);
+router.post('/admin/pedidos', authMiddleware, AdminController.criarPedidoManual);
 router.get('/admin/resumo', authMiddleware, AdminController.getResumoProducao);
 router.post('/admin/cardapio', authMiddleware, CardapioController.salvarCardapio);
 router.get('/admin/funcionarios', authMiddleware, FuncionarioController.listarFuncionarios);

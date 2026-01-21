@@ -6,7 +6,8 @@ const props = defineProps(['pedidoId']);
 const emit = defineEmits(['close', 'salvo']);
 
 const loading = ref(true);
-const dadosGerais = ref({ tamanhos: [], opcoes: [] }); // Carrega opções do sistema
+const dadosGerais = ref({ tamanhos: [], opcoes: [] });
+
 const form = ref({
   tamanhoId: null,
   observacao: '',
@@ -17,44 +18,43 @@ const form = ref({
 // Carrega tudo que precisa
 onMounted(async () => {
   try {
-    // 1. Busca os cadastros gerais (Tamanhos, Opções) - Reutilizando rota pública ou crie uma no admin
-    // Dica: Use a rota existente do PedidoController ou do GerencialController
-    const resGeral = await api.get('/dados-pedido?setorId=1'); // Hack: Passa setor 1 só pra pegar a lista, ou crie rota especifica
-    // O ideal seria: const resGeral = await api.get('/admin/dados-form-pedido');
+    // --- CORREÇÃO AQUI ---
+    // Não usamos mais '/dados-pedido' pois ele bloqueia por horário.
+    // Usamos as rotas administrativas que são livres de bloqueio.
 
-    // Vamos assumir que você tem uma rota que traz tamanhos e opcoes.
-    // Se não tiver, use a /dados-pedido mesmo, mas cuidado com bloqueio de horário.
-    // MELHOR: Use as rotas do GerencialController que criamos (listarTamanhos, listarOpcoes)
-    const [resTam, resOp] = await Promise.all([
-        api.get('/admin/tamanhos'),
-        api.get('/admin/opcoes')
+    const [resTam, resOp, resPedido] = await Promise.all([
+        api.get('/admin/tamanhos'), // Traz lista de tamanhos
+        api.get('/admin/opcoes'),   // Traz lista de opções
+        api.get(`/admin/pedidos/${props.pedidoId}`) // Traz o pedido
     ]);
 
-    dadosGerais.value.tamanhos = resTam.data;
-    dadosGerais.value.opcoes = resOp.data;
+    // Preenche as listas para o formulário
+    // Se a rota admin retornar inativos também, filtramos aqui para não poluir o select
+    dadosGerais.value.tamanhos = resTam.data.filter(t => t.ativo !== false);
+    dadosGerais.value.opcoes = resOp.data.filter(o => o.ativo !== false);
 
-    // 2. Busca os dados DESTE pedido
-    const resPedido = await api.get(`/admin/pedidos/${props.pedidoId}`);
+    // Preenche os dados do pedido no formulário
     const ped = resPedido.data;
 
     form.value.tamanhoId = ped.tamanhoId;
     form.value.observacao = ped.observacao;
 
-    // 3. Distribui os IDs que vieram do banco entre Radio e Checkbox
+    // Distribui os IDs que vieram do banco entre Radio e Checkbox
     const idsExistentes = ped.opcoesEscolhidasIds || [];
 
-    // Separa o que é troca (radio) do que é extra (check)
+    // Separa o que é troca (radio) do que é extra (check) nas listas gerais
     const opcoesTroca = dadosGerais.value.opcoes.filter(o => o.tipo === 'TROCA');
 
-    // Tenta achar qual ID pertence às trocas
+    // Tenta achar qual ID que o usuário tem pertence às trocas (Radio Button)
     const idTroca = idsExistentes.find(id => opcoesTroca.some(ot => ot.id === id));
     form.value.opcaoRadio = idTroca || null;
 
-    // O resto vai pro checkbox
+    // O resto vai pro checkbox (Extras)
     form.value.opcoesCheck = idsExistentes.filter(id => id !== idTroca);
 
   } catch (error) {
-    alert('Erro ao carregar dados do pedido.');
+    console.error(error);
+    alert('Erro ao carregar dados do pedido. Verifique se você tem permissão de Admin.');
     emit('close');
   } finally {
     loading.value = false;
@@ -74,11 +74,11 @@ const salvar = async () => {
     alert('Pedido alterado!');
     emit('salvo');
   } catch (error) {
-    alert('Erro ao salvar alteração.');
+    alert(error.response?.data?.message || 'Erro ao salvar alteração.');
   }
 };
 
-// Computados para template
+// Computados para template (Filtros visuais)
 const opcoesTrocas = computed(() => dadosGerais.value.opcoes.filter(o => o.tipo === 'TROCA'));
 const opcoesExtras = computed(() => dadosGerais.value.opcoes.filter(o => o.tipo !== 'TROCA'));
 

@@ -1,10 +1,14 @@
 <script setup>
-import { ref, onMounted, computed, watch } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import api from '../../services/api';
+import { useAdminAuthStore } from '../../stores/adminAuth';
+
+const adminStore = useAdminAuthStore();
+const usuario = adminStore.usuario;
+const isClient = computed(() => usuario && usuario.perfil === 'CLIENTE');
 
 const lista = ref([]);
 const empresas = ref([]);
-const setores = ref([]); // Todos os setores do sistema
 const loading = ref(false);
 
 // Filtros da Listagem
@@ -27,12 +31,34 @@ const form = ref({
 
 // --- CARREGAMENTOS ---
 const carregarAuxiliares = async () => {
-  // Precisamos das listas de empresas e setores para os combos
-  const [resEmp, resSet] = await Promise.all([
-    api.get('/admin/empresas'),
-    api.get('/admin/setores') // Precisamos garantir que essa rota retorne lista simples
-  ]);
-  empresas.value = resEmp.data;
+  // Se for CLIENTE, não precisa buscar lista de todas as empresas
+  if (!isClient.value) {
+      const resEmp = await api.get('/admin/empresas');
+      empresas.value = resEmp.data;
+  } else {
+      // Se for cliente, simulamos a lista com apenas a empresa dele (para os selects funcionarem)
+      // Precisamos do nome da empresa. Se não tiver no usuario store, buscamos.
+      // Vou assumir que vamos buscar lista de empresas filtrada pelo backend (que criamos rota no passo anterior /admin/empresas/simples que o cliente pode acessar? Se não, o select fica vazio)
+
+      // SOLUÇÃO: Vamos fazer o backend retornar a lista de empresas filtrada para o cliente também
+      // Ou simplesmente deixamos vazio e travamos o ID.
+      try {
+          // Tenta buscar empresas (o backend deve retornar só a dele ou todas)
+          // Se o backend bloquear /admin/empresas para cliente, vai dar erro.
+          // Vamos assumir que você ajustou o EmpresaController ou usamos uma lógica manual:
+          // Se for cliente, a lista de empresas terá 1 item só.
+
+          // Recomendo usar a rota /admin/empresas/simples e garantir que o backend filtra ela.
+          const resEmp = await api.get('/admin/empresas/simples');
+          empresas.value = resEmp.data;
+      } catch (e) {
+          console.log('Erro ao carregar empresas');
+      }
+  }
+
+  // Carrega setores (o backend já deve filtrar setores por empresa se for cliente? Vamos checar)
+  // O ideal é a rota /admin/setores retornar tudo e o backend filtrar se for CLIENTE.
+  const resSet = await api.get('/admin/setores');
 
   // A rota /admin/setores atual retorna hierarquia.
   // O ideal seria ter uma rota simples, mas vamos "achatá-la" aqui se necessário
@@ -86,7 +112,15 @@ const abrirModal = (funcionario = null) => {
     };
   } else {
     // Novo
-    form.value = { id: null, nome: '', raCpf: '', empresaId: '', setorId: '', dataNascimento: '' };
+    form.value = {
+      id: null,
+      nome: '',
+      raCpf: '',
+      // Se for cliente, já fixa a empresa dele
+      empresaId: isClient.value ? usuario.empresaId : '',
+      setorId: '',
+      dataNascimento: ''
+    };
   }
   modalAberto.value = true;
 };
@@ -172,7 +206,7 @@ const formatarData = (dataIso) => {
     <h3>Funcionários</h3>
 
     <div class="filtros-bar no-print">
-      <select v-model="filtro.empresaId" @change="buscarFuncionarios">
+      <select v-if="!isClient" v-model="filtro.empresaId" @change="buscarFuncionarios">
         <option value="">Todas Empresas</option>
         <option v-for="e in empresas" :key="e.id" :value="e.id">{{ e.nome }}</option>
       </select>
@@ -229,12 +263,13 @@ const formatarData = (dataIso) => {
         <input v-model="form.raCpf">
 
         <div class="row">
-          <div class="col">
+          <div class="col" v-if="!isClient">
             <label>Empresa:</label>
             <select v-model="form.empresaId">
               <option v-for="e in empresas" :key="e.id" :value="e.id">{{ e.nome }}</option>
             </select>
           </div>
+
           <div class="col">
             <label>Setor:</label>
             <select v-model="form.setorId" :disabled="!form.empresaId">

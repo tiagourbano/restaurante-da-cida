@@ -43,7 +43,13 @@ const router = createRouter({
           name: 'admin-relatorios',
           component: () => import('../views/RelatoriosView.vue'),
           meta: { roles: ['ADMIN', 'CLIENTE'] },
-        }
+        },
+        {
+          path: 'funcionarios', // Rota: /admin/funcionarios
+          name: 'admin-funcionarios',
+          component: () => import('../views/FuncionariosView.vue'),
+          meta: { roles: ['ADMIN', 'CLIENTE'] } // <--- CLIENTE TEM ACESSO
+        },
       ]
     },
   ],

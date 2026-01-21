@@ -46,6 +46,14 @@ const irPara = (caminho) => {
         </button>
 
         <button
+          v-if="!isAdmin"
+          :class="{ ativo: route.path === '/admin/funcionarios' }"
+          @click="irPara('/admin/funcionarios')"
+        >
+          👥 Funcionários
+        </button>
+
+        <button
           :class="{ ativo: route.path === '/admin/relatorios' }"
           @click="irPara('/admin/relatorios')"
         >

@@ -4,10 +4,12 @@ import api from '../services/api';
 import Etiqueta from '../components/Etiqueta.vue';
 import EditarPedidoModal from '../components/admin/EditarPedidoModal.vue';
 import ResumoImpressao from '../components/admin/ResumoImpressao.vue';
+import NovoPedidoAdminModal from '../components/admin/NovoPedidoAdminModal.vue';
 
 const pedidosRaw = ref([]);
 const loading = ref(true);
 const pedidoParaEditar = ref(null);
+const modalNovoPedidoAberto = ref(false);
 
 // --- DADOS ESTRUTURAIS (Para popular os selects) ---
 const dadosHierarquicos = ref([]); // Guarda a arvore completa: Empresa -> Setores -> Horarios
@@ -204,6 +206,10 @@ const pedidosAgrupados = computed(() => {
 
 // --- LÓGICA DE IMPRESSÃO ---
 const imprimirLote = async (pedidosDoSetor) => {
+  console.log("=== IMPRIMINDO LOTE ===");
+  console.log("Quantidade esperada:", pedidosDoSetor.length);
+  console.log("Pedidos:", pedidosDoSetor.map(p => `${p.funcionarioNome} (${p.setorNome})`));
+
   loteParaImpressao.value = pedidosDoSetor;
   isImprimindo.value = true;
   await nextTick();
@@ -255,6 +261,19 @@ const dadosResumoCozinha = computed(() => {
 
 const abrirEdicao = (pedidoId) => { pedidoParaEditar.value = pedidoId; };
 const aoSalvarEdicao = () => { pedidoParaEditar.value = null; carregarDados(); };
+const aoSalvarNovoPedido = () => { modalNovoPedidoAberto.value = false; carregarDados(); };
+
+const excluirPedido = async (pedidoId) => {
+  if(!confirm('Tem certeza que deseja excluir este pedido?')) return;
+
+  try {
+    await api.delete(`/admin/pedidos/${pedidoId}`);
+    // Recarrega a lista
+    carregarDados();
+  } catch (error) {
+    alert('Erro ao excluir pedido.');
+  }
+};
 
 onMounted(carregarDados);
 </script>
@@ -310,6 +329,9 @@ onMounted(carregarDados);
          </div>
 
          <button @click="carregarDados" class="btn-refresh" title="Atualizar">🔄</button>
+         <button @click="modalNovoPedidoAberto = true" class="btn-manual no-print" title="Fazer pedido para funcionário">
+            ➕ Pedido Manual
+         </button>
       </div>
     </header>
 
@@ -342,6 +364,7 @@ onMounted(carregarDados);
                     {{ p.funcionarioNome }} <span class="detalhe-tam">({{ p.tamanhoNome }})</span>
                     <span v-if="p.observacao || p.opcoesEscolhidasString" class="tem-obs">⚠️</span>
                     <button @click.stop="abrirEdicao(p.pedidoId)" class="btn-editar">✏️</button>
+                    <button @click.stop="excluirPedido(p.pedidoId)" class="btn-acao excluir" title="Excluir">🗑️</button>
                   </li>
                 </ul>
              </div>
@@ -384,12 +407,13 @@ onMounted(carregarDados);
     <div class="area-impressao-real" v-if="isImprimindo"><Etiqueta v-for="p in loteParaImpressao" :key="p.pedidoId" :pedido="p" /></div>
     <div class="area-impressao-real" v-if="isImprimindoResumo"><ResumoImpressao :titulo="tituloResumoImpressao" :resumo="resumoParaImpressao" /></div>
     <EditarPedidoModal v-if="pedidoParaEditar" :pedidoId="pedidoParaEditar" @close="pedidoParaEditar = null" @salvo="aoSalvarEdicao" />
+    <NovoPedidoAdminModal v-if="modalNovoPedidoAberto" @close="modalNovoPedidoAberto = false" @salvo="aoSalvarNovoPedido" />
 
   </div>
 </template>
 
 <style scoped>
-/* Reuse os estilos anteriores, garantindo que .grupo-filtro select tenha disabled styling */
+/* --- ESTILOS VISUAIS (TELA) - MANTIDOS --- */
 .expedicao-container { max-width: 1000px; margin: 0 auto; padding: 20px; }
 .header-top { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; }
 h1 { margin: 0; color: #2c3e50; font-size: 1.8rem; }
@@ -403,8 +427,7 @@ h1 { margin: 0; color: #2c3e50; font-size: 1.8rem; }
 .switch-mode button { border: none; background: transparent; padding: 6px 15px; border-radius: 15px; cursor: pointer; font-weight: bold; color: #555; }
 .switch-mode button.ativo { background: white; color: #2c3e50; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
 .btn-refresh { background: #2c3e50; color: white; border: none; width: 35px; height: 35px; border-radius: 50%; cursor: pointer; margin-left: auto; display: flex; justify-content: center; align-items: center; font-size: 1.2rem; }
-
-/* Styles de Cards e Tabelas (mantidos) */
+.btn-manual { background: #e67e22; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-weight: bold;}
 .card-empresa { border: 1px solid #ddd; margin-bottom: 15px; border-radius: 8px; background: white; overflow: hidden; }
 .empresa-header { padding: 15px; background: #f8f9fa; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
 .empresa-body { padding: 15px; border-top: 1px solid #eee; }
@@ -422,10 +445,35 @@ h1 { margin: 0; color: #2c3e50; font-size: 1.8rem; }
 .row-tam { color: #1565c0; }
 .row-troca { color: #e65100; background: #fff8e1; }
 .row-extra { color: #b71c1c; }
-.area-impressao-real { display: none; }
+
+/* --- CSS DE IMPRESSÃO (A CORREÇÃO NUCLEAR) --- */
 @media print {
-  .no-print { display: none !important; }
-  .area-impressao-real { display: block; }
-  .expedicao-container { padding: 0; margin: 0; max-width: none; }
+  /* 1. Esconde TUDO que não seja a área de impressão */
+  .no-print,
+  .expedicao-container > *:not(.area-impressao-real) {
+    display: none !important;
+  }
+
+  /* 2. Zera o container principal para ele não ocupar espaço fantasma */
+  .expedicao-container {
+    margin: 0 !important;
+    padding: 0 !important;
+    height: 0 !important;
+    overflow: hidden !important;
+    border: none !important;
+    max-width: none !important;
+  }
+
+  /* 3. Posiciona a área de impressão no TOPO ABSOLUTO */
+  .area-impressao-real {
+    display: block !important;
+    position: absolute; /* Tira do fluxo e joga pro topo */
+    top: 0;
+    left: 0;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    background: white;
+  }
 }
 </style>

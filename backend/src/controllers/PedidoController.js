@@ -66,8 +66,7 @@ const getDataHoraSP = () => {
 // --- CONTROLLERS ATUALIZADOS ---
 
 exports.getDadosIniciais = async (req, res) => {
-    // PRECISASMOS RECEBER O SETOR ID AGORA
-    const { setorId } = req.query;
+    const { setorId, funcionarioId } = req.query;
 
     if (!setorId) {
         return res.status(400).json({ message: 'Setor não informado.' });
@@ -104,6 +103,32 @@ exports.getDadosIniciais = async (req, res) => {
         }
 
         const dataAlvoFormatada = dataAlvo.toISOString().split('T')[0];
+
+        if (funcionarioId) {
+            // Verifica se existe pedido para este funcionário na data do cardápio alvo
+            // A comparação usa a coluna 'data_pedido' (se ela salva datetime, precisamos comparar DATE(data_pedido))
+            // Mas cuidado: sua lógica atual salva a dataPedidoSP no INSERT.
+            // O ideal é checar se existe um pedido vinculado ao CARDÁPIO daquele dia.
+
+            // Vamos buscar pelo cardápio do dia
+            const [cardapioDoDia] = await db.execute('SELECT id FROM cardapios WHERE data_servico = ?', [dataAlvoFormatada]);
+
+            if (cardapioDoDia.length > 0) {
+                const cardapioId = cardapioDoDia[0].id;
+
+                const [pedidoExistente] = await db.execute(
+                    'SELECT id FROM pedidos WHERE funcionario_id = ? AND cardapio_id = ?',
+                    [funcionarioId, cardapioId]
+                );
+
+                if (pedidoExistente.length > 0) {
+                    return res.status(403).json({
+                        bloqueio: true, // Reutilizamos a flag de bloqueio visual
+                        message: `Você já realizou seu pedido para ${dataAlvo.toLocaleDateString('pt-BR')}!<br>Para alterar, ligue para o restaurante.`
+                    });
+                }
+            }
+        }
 
         // 4. BUSCAR CARDÁPIO (Usando a dataAlvo)
         const [cardapio] = await db.execute('SELECT * FROM cardapios WHERE data_servico = ?', [dataAlvoFormatada]);
