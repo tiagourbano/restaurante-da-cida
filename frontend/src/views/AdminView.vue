@@ -206,10 +206,6 @@ const pedidosAgrupados = computed(() => {
 
 // --- LÓGICA DE IMPRESSÃO ---
 const imprimirLote = async (pedidosDoSetor) => {
-  console.log("=== IMPRIMINDO LOTE ===");
-  console.log("Quantidade esperada:", pedidosDoSetor.length);
-  console.log("Pedidos:", pedidosDoSetor.map(p => `${p.funcionarioNome} (${p.setorNome})`));
-
   loteParaImpressao.value = pedidosDoSetor;
   isImprimindo.value = true;
   await nextTick();
