@@ -29,6 +29,7 @@ exports.importarExcel = async (req, res) => {
             const ra = String(linha.RA).trim(); // Converte pra string pra evitar erro
             const nomeEmpresa = linha.EMPRESA;
             const nomeSetor = linha.SETOR;
+            const centroCusto = linha.CENTRO_CUSTO;
 
             if (!ra || !nomeFunc) continue; // Pula linhas vazias
 
@@ -58,10 +59,10 @@ exports.importarExcel = async (req, res) => {
             // C. Inserir ou Atualizar Funcionário
             // Se o RA já existe, atualizamos o setor (caso ele tenha mudado de área)
             await connection.execute(`
-                INSERT INTO funcionarios (nome, ra_cpf, setor_id, ativo)
-                VALUES (?, ?, ?, true)
+                INSERT INTO funcionarios (nome, ra_cpf, setor_id, centro_custo, ativo)
+                VALUES (?, ?, ?, ?, true)
                 ON DUPLICATE KEY UPDATE nome = VALUES(nome), setor_id = VALUES(setor_id)
-            `, [nomeFunc, ra, setorId]);
+            `, [nomeFunc, ra, setorId, centroCusto]);
 
             contagem++;
         }

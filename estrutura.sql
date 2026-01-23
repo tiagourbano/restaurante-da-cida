@@ -32,6 +32,7 @@ CREATE TABLE funcionarios (
     nome VARCHAR(150) NOT NULL,
     ra_cpf VARCHAR(20) NOT NULL UNIQUE,
     data_nascimento DATE DEFAULT NULL;
+    centro_custo VARCHAR(150) NOT NULL,
     setor_id INT NOT NULL,
     ativo BOOLEAN DEFAULT TRUE,
     FOREIGN KEY (setor_id) REFERENCES setores(id)

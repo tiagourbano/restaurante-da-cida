@@ -120,3 +120,8 @@ exports.criarAdminInicial = async (req, res) => {
         res.status(500).json({ error: e.message });
     }
 };
+
+exports.gerarSenhaCriptografada = async (req, res) => {
+    const senhaHash = await bcrypt.hash(req.query.senha, 10);
+    res.json({ message: 'Senha gerada com sucesso para: ' + req.query.senha, senha: senhaHash });
+};

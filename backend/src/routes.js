@@ -30,6 +30,7 @@ router.get('/dados-pedido', PedidoController.getDadosIniciais); // Front chama a
 router.post('/pedido', PedidoController.criarPedido);
 
 router.get('/setup-admin', AuthController.criarAdminInicial);
+router.get('/setup-admin/senha', AuthController.gerarSenhaCriptografada);
 router.post('/admin/login', AuthController.loginAdmin);
 router.get('/admin/pedidos', authMiddleware, AdminController.getPedidosDoDia);
 router.get('/admin/pedidos/:id', authMiddleware, AdminController.getDetalhesPedido);
