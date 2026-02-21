@@ -51,11 +51,47 @@ const gerarRelatorio = async () => {
   }
 };
 
-const baixarExcel = () => {
+const baixarExcel = async () => {
   // Para baixar arquivo, não usamos axios. Abrimos a URL em nova aba ou window.location
   // Precisamos montar a query string manualmente
-  const query = new URLSearchParams(filtro.value).toString();
-  window.open(`/api/admin/relatorio/excel?${query}`, '_blank');
+  // const query = new URLSearchParams(filtro.value).toString();
+  // window.open(`/api/admin/relatorio/excel?${query}`, '_blank');
+
+  try {
+    const query = new URLSearchParams(filtro.value).toString();
+
+    // 1. Faz a requisição usando o Axios (que já coloca o Token no header)
+    // IMPORTANTE: responseType: 'blob' diz ao Axios para não tentar ler como JSON
+    const response = await api.get(`/admin/relatorio/excel?${query}`, {
+      responseType: 'blob'
+    });
+
+    // 2. Cria um "objeto de arquivo" (Blob) com os dados recebidos
+    const blob = new Blob([response.data], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    });
+
+    // 3. Cria uma URL temporária na memória do navegador para esse arquivo
+    const url = window.URL.createObjectURL(blob);
+
+    // 4. Cria um link invisível <a>, clica nele e depois apaga
+    const link = document.createElement('a');
+    link.href = url;
+
+    // Define o nome do arquivo que vai ser salvo no computador da sua tia
+    link.setAttribute('download', 'fechamento_marmitas.xlsx');
+
+    document.body.appendChild(link);
+    link.click(); // Força o download
+
+    // 5. Limpeza da memória
+    link.parentNode.removeChild(link);
+    window.URL.revokeObjectURL(url);
+
+  } catch (error) {
+    console.error('Erro ao baixar Excel:', error);
+    alert('Erro ao baixar o arquivo Excel. Verifique sua conexão.');
+  }
 };
 
 // Formatação de Moeda
