@@ -124,7 +124,7 @@ exports.getDadosIniciais = async (req, res) => {
                 if (pedidoExistente.length > 0) {
                     return res.status(403).json({
                         bloqueio: true, // Reutilizamos a flag de bloqueio visual
-                        message: `Você já realizou seu pedido para ${dataAlvo.toLocaleDateString('pt-BR')}!<br>Para alterar, ligue para o restaurante.`
+                        message: `Você já realizou seu pedido para ${dataAlvo.toLocaleDateString('pt-BR')}!<br>Para alterar, ligue para o restaurante (35) 99884-2001.`
                     });
                 }
             }
@@ -191,7 +191,7 @@ exports.criarPedido = async (req, res) => {
 
     } catch (error) {
         await connection.rollback();
-        if (error.code === 'ER_DUP_ENTRY') return res.status(400).json({ message: 'Você já fez um pedido hoje! Para alterar, ligue para o restaurante.' });
+        if (error.code === 'ER_DUP_ENTRY') return res.status(400).json({ message: 'Você já fez um pedido hoje! Para alterar, ligue para o restaurante (35) 99884-2001.' });
         console.error(`[API] ${error}`);
         res.status(500).json({ message: error.message || 'Erro ao salvar pedido.' });
     } finally {

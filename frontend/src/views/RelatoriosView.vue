@@ -55,7 +55,7 @@ const baixarExcel = () => {
   // Para baixar arquivo, não usamos axios. Abrimos a URL em nova aba ou window.location
   // Precisamos montar a query string manualmente
   const query = new URLSearchParams(filtro.value).toString();
-  window.open(`http://localhost:3000/api/admin/relatorio/excel?${query}`, '_blank');
+  window.open(`/api/admin/relatorio/excel?${query}`, '_blank');
 };
 
 // Formatação de Moeda

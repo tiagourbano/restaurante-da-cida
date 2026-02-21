@@ -105,7 +105,7 @@ const finalizarPedido = async () => {
     </h2>
 
     <p class="msg-aviso" v-html="mensagemBloqueio"></p>
-    <p class="instrucao">Por favor, entre em contato com o restaurante por telefone.</p>
+    <p class="instrucao">Por favor, entre em contato com o restaurante (35) 99884-2001.</p>
     <button @click="router.push('/login')" class="btn-voltar">Voltar</button>
   </div>
 

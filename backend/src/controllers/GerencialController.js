@@ -85,6 +85,16 @@ exports.toggleOpcao = async (req, res) => {
     } catch (e) { res.status(500).json({ error: 'Erro' }); }
 };
 
+const excluirOpcao  = async (req, res) => {
+    const { id } = req.params;
+    try {
+        await db.execute('DELETE FROM opcoes_extras WHERE id = ?', [id]);
+        res.json({ message: 'Opção excluída.' });
+    } catch (e) {
+        res.status(500).json({ message: 'Erro ao excluir.' });
+    }
+};
+
 // --- CARDÁPIO (Listar dias cadastrados) ---
 exports.listarCardapiosRecentes = async (req, res) => {
     try {

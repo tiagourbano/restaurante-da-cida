@@ -69,6 +69,7 @@ router.patch('/admin/tamanhos/status', authMiddleware, GerencialController.toggl
 router.get('/admin/opcoes', authMiddleware, GerencialController.listarOpcoes);
 router.post('/admin/opcoes', authMiddleware, GerencialController.salvarOpcao);
 router.patch('/admin/opcoes/status', authMiddleware, GerencialController.toggleOpcao);
+router.delete('/admin/opcoes/:id', authMiddleware, GerencialController.excluirOpcao);
 
 // Cardápios (Histórico)
 router.get('/admin/cardapios', authMiddleware, GerencialController.listarCardapiosRecentes);

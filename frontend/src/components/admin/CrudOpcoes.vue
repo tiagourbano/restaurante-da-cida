@@ -33,6 +33,16 @@ const cancelar = () => {
   editando.value = false;
 };
 
+const excluir = async (id) => {
+  if (!confirm('Tem certeza?')) return;
+  try {
+    await api.delete(`/admin/opcoes/${id}`);
+    carregar();
+  } catch (error) {
+    alert('Erro ao excluir.');
+  }
+};
+
 onMounted(carregar);
 </script>
 
@@ -67,7 +77,10 @@ onMounted(carregar);
               {{ item.ativo ? '✅ Ativo' : '❌ Inativo' }}
             </button>
           </td>
-          <td><button @click="editar(item)">✏️</button></td>
+          <td>
+            <button @click="editar(item)">✏️</button>
+            <button @click="excluir(item)">🗑️</button>
+          </td>
         </tr>
       </tbody>
     </table>
