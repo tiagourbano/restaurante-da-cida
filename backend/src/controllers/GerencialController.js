@@ -85,7 +85,7 @@ exports.toggleOpcao = async (req, res) => {
     } catch (e) { res.status(500).json({ error: 'Erro' }); }
 };
 
-const excluirOpcao  = async (req, res) => {
+exports.excluirOpcao = async (req, res) => {
     const { id } = req.params;
     try {
         await db.execute('DELETE FROM opcoes_extras WHERE id = ?', [id]);
