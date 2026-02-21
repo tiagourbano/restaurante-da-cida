@@ -79,7 +79,7 @@ onMounted(carregar);
           </td>
           <td>
             <button @click="editar(item)">✏️</button>
-            <button @click="excluir(item)">🗑️</button>
+            <!-- <button @click="excluir(item)">🗑️</button> -->
           </td>
         </tr>
       </tbody>
