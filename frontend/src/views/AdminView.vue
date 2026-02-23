@@ -361,6 +361,7 @@ onMounted(carregarDados);
                     <span v-if="p.observacao || p.opcoesEscolhidasString" class="tem-obs">⚠️</span>
                     <button @click.stop="abrirEdicao(p.pedidoId)" class="btn-editar">✏️</button>
                     <button @click.stop="excluirPedido(p.pedidoId)" class="btn-acao excluir" title="Excluir">🗑️</button>
+                    <button @click.stop="imprimirLote([p])" class="btn-acao imprimir" title="Imprimir Etiqueta Individual">🖨️</button>
                   </li>
                 </ul>
              </div>
