@@ -9,11 +9,12 @@ async function buscarDadosAgrupados(filtros, usuario) {
 
     let query = `
         SELECT
-            p.id, p.data_pedido,
+            p.id, --p.data_pedido,
             f.nome as funcionario_nome,
             e.nome as empresa_nome, e.id as empresa_id,
             s.nome as setor_nome, s.id as setor_id,
             t.nome as tamanho_nome, t.preco,
+            c.data_servico as data_pedido,
             -- Subquery para pegar opcionais concatenados
             (
                 SELECT GROUP_CONCAT(oe.nome SEPARATOR ', ')

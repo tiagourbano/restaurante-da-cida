@@ -175,52 +175,37 @@ exports.excluirPedido = async (req, res) => {
 };
 
 exports.criarPedidoManual = async (req, res) => {
-    // Admin manda tudo, inclusive o ID do funcionário
-    const { funcionarioId, tamanhoId, observacao, opcoesEscolhidasIds } = req.body;
+    // Agora recebemos a dataServico (YYYY-MM-DD) direto do frontend
+    const { funcionarioId, tamanhoId, observacao, opcoesEscolhidasIds, dataServico } = req.body;
+
+    if (!dataServico) {
+        return res.status(400).json({ message: 'A data do pedido é obrigatória.' });
+    }
 
     const connection = await db.getConnection();
 
     try {
-        // A. Descobrir qual é o Cardápio Ativo (Lógica simplificada: pega o do dia/corte)
-        // Como o Admin pode estar pedindo a qualquer hora, vamos assumir que ele quer
-        // pedir para o cardápio que está "valendo" agora ou o de amanhã se for tarde.
-        // *Melhoria:* Vamos buscar o cardápio baseado na regra de corte do setor do funcionário
-        // para garantir que caia no dia certo (produção de hoje ou amanhã).
-
-        const [funcData] = await connection.execute('SELECT setor_id FROM funcionarios WHERE id = ?', [funcionarioId]);
-        if (funcData.length === 0) throw new Error('Funcionário não encontrado.');
-        const setorId = funcData[0].setor_id;
-
-        // Regra de Corte (Cópia da lógica do PedidoController, mas sem o bloqueio)
-        const [setorRows] = await connection.execute('SELECT hora_corte_visualizacao FROM setores WHERE id = ?', [setorId]);
-        const horaCorteStr = (setorRows[0]?.hora_corte_visualizacao) || '23:59:00';
-
-        // Data atual SP
-        const agora = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }));
-        const horaAtualStr = agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-
-        let dataAlvo = agora;
-        if (horaAtualStr >= horaCorteStr) {
-            dataAlvo.setDate(dataAlvo.getDate() + 1);
-        }
-        const dataAlvoFormatada = dataAlvo.toISOString().split('T')[0];
-
-        // Busca o Cardápio dessa data
-        const [cardapios] = await connection.execute('SELECT id FROM cardapios WHERE data_servico = ?', [dataAlvoFormatada]);
+        // A. Busca o Cardápio EXATO daquela data escolhida
+        const [cardapios] = await connection.execute('SELECT id FROM cardapios WHERE data_servico = ?', [dataServico]);
 
         if (cardapios.length === 0) {
-            return res.status(400).json({ message: `Não há cardápio cadastrado para a data ${dataAlvoFormatada}.` });
+            // Formata a data para a mensagem de erro ficar amigável
+            const [ano, mes, dia] = dataServico.split('-');
+            return res.status(400).json({ message: `Atenção: Você ainda não cadastrou o cardápio para o dia ${dia}/${mes}/${ano}.` });
         }
+
         const cardapioId = cardapios[0].id;
 
-        // B. Verifica Duplicidade (Admin pode querer forçar, mas vamos avisar se já tiver)
+        // B. Verifica Duplicidade (Impede de lançar 2x pro mesmo dia)
         const [existente] = await connection.execute('SELECT id FROM pedidos WHERE funcionario_id = ? AND cardapio_id = ?', [funcionarioId, cardapioId]);
         if (existente.length > 0) {
-            return res.status(400).json({ message: 'Este funcionário já tem pedido para esta data.' });
+            return res.status(400).json({ message: 'Este funcionário já possui um pedido para esta data.' });
         }
 
-        // C. Salva
+        // C. Salva o Pedido
         await connection.beginTransaction();
+
+        // Mantemos a data_pedido como o momento exato em que a tia digitou no sistema (para log)
         const dataPedidoSP = getDataHoraSP();
 
         const [result] = await connection.execute(`
@@ -230,6 +215,7 @@ exports.criarPedidoManual = async (req, res) => {
 
         const pedidoId = result.insertId;
 
+        // Salva os opcionais
         if (opcoesEscolhidasIds && opcoesEscolhidasIds.length > 0) {
             for (const opId of opcoesEscolhidasIds) {
                 await connection.execute('INSERT INTO pedido_opcoes_escolhidas (pedido_id, opcao_extra_id) VALUES (?, ?)', [pedidoId, opId]);
@@ -237,7 +223,7 @@ exports.criarPedidoManual = async (req, res) => {
         }
 
         await connection.commit();
-        res.json({ message: 'Pedido criado manualmente!' });
+        res.json({ message: 'Pedido criado manualmente com sucesso!' });
 
     } catch (error) {
         await connection.rollback();

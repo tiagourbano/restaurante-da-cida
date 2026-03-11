@@ -16,6 +16,7 @@ const dadosHierarquicos = ref([]); // Guarda a arvore completa: Empresa -> Setor
 
 // --- FILTROS ---
 const filtros = ref({
+  data: new Date().toISOString().split('T')[0],
   empresaId: '',
   setorId: '',
   janelaSelecionada: '' // String JSON {inicio, fim}
@@ -29,6 +30,10 @@ watch(() => filtros.value.empresaId, () => {
 
 watch(() => filtros.value.setorId, () => {
   filtros.value.janelaSelecionada = '';
+});
+
+watch(() => filtros.value.data, () => {
+  carregarDados();
 });
 
 // --- COMPUTEDS PARA OS DROPDOWNS DINÂMICOS ---
@@ -121,7 +126,7 @@ const carregarDados = async () => {
   loading.value = true;
   try {
     const [resPedidos, resSetores] = await Promise.all([
-        api.get('/admin/pedidos'),
+        api.get(`/admin/pedidos?data=${filtros.value.data}`),
         api.get('/admin/setores/horarios') // Rota que retorna estrutura hierarquica (Empresa -> Setores -> Horarios)
     ]);
 
@@ -287,7 +292,12 @@ onMounted(carregarDados);
 
       <div class="barra-filtros">
 
-         <div class="grupo-filtro">
+        <div class="grupo-filtro">
+          <label>📅 Data de Produção:</label>
+          <input type="date" v-model="filtros.data">
+        </div>
+
+        <div class="grupo-filtro">
             <label>1. Empresa:</label>
             <select v-model="filtros.empresaId">
                <option value="">Selecione...</option>
@@ -295,7 +305,7 @@ onMounted(carregarDados);
                   {{ e.nome }}
                </option>
             </select>
-         </div>
+        </div>
 
          <div class="grupo-filtro">
             <label>2. Setor (Opcional):</label>
@@ -417,6 +427,7 @@ h1 { margin: 0; color: #2c3e50; font-size: 1.8rem; }
 .barra-filtros { background: #f1f3f5; padding: 10px 15px; border-radius: 8px; display: flex; gap: 15px; align-items: flex-end; flex-wrap: wrap; margin-bottom: 20px; }
 .grupo-filtro { display: flex; flex-direction: column; gap: 5px; }
 .grupo-filtro label { font-size: 0.8rem; font-weight: bold; color: #555; }
+.grupo-filtro input { padding: 8px; border-radius: 4px; border: 1px solid #ccc; }
 .grupo-filtro select { padding: 8px; border-radius: 4px; border: 1px solid #ccc; min-width: 150px; }
 .grupo-filtro select:disabled { background: #e9ecef; cursor: not-allowed; color: #999; }
 .separador { width: 1px; background: #ccc; height: 30px; margin: 0 10px; }

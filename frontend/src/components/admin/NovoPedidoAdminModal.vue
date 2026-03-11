@@ -13,6 +13,7 @@ const opcoes = ref([]);
 
 // Formulário
 const form = ref({
+  dataServico: new Date().toISOString().split('T')[0], // Já vem preenchido com o dia de hoje
   empresaId: '',
   funcionarioId: '',
   tamanhoId: null,
@@ -59,8 +60,8 @@ watch(() => form.value.empresaId, async (novoId) => {
 });
 
 const salvar = async () => {
-  if (!form.value.funcionarioId || !form.value.tamanhoId) {
-    return alert('Selecione Funcionário e Tamanho.');
+  if (!form.value.dataServico || !form.value.funcionarioId || !form.value.tamanhoId) {
+    return alert('Preencha a Data, Funcionário e Tamanho.');
   }
 
   const idsFinais = [...form.value.opcoesCheck];
@@ -68,6 +69,7 @@ const salvar = async () => {
 
   try {
     await api.post('/admin/pedidos', {
+      dataServico: form.value.dataServico,
       funcionarioId: form.value.funcionarioId,
       tamanhoId: form.value.tamanhoId,
       observacao: form.value.observacao,
@@ -92,6 +94,11 @@ const opcoesExtras = computed(() => opcoes.value.filter(o => o.tipo !== 'TROCA')
 
       <div v-if="loading">Carregando...</div>
       <div v-else class="form-scroll">
+
+        <div class="secao-data">
+            <label>📅 Data da Marmita:</label>
+            <input type="date" v-model="form.dataServico">
+        </div>
 
         <div class="secao-pessoa">
             <label>1. Empresa:</label>
@@ -152,8 +159,12 @@ const opcoesExtras = computed(() => opcoes.value.filter(o => o.tipo !== 'TROCA')
 .modal-backdrop { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; justify-content: center; align-items: center; z-index: 1000; }
 .modal-card { background: white; padding: 20px; border-radius: 8px; width: 500px; max-width: 95%; max-height: 90vh; display: flex; flex-direction: column; }
 .form-scroll { overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+.secao-data { margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid #eee; }
+.secao-data label { font-weight: bold; color: #e67e22; }
+.secao-data input { padding: 8px; border: 1px solid #ccc; border-radius: 4px; width: 100%; }
 .secao-pessoa { background: #f9f9f9; padding: 10px; border-radius: 6px; border: 1px solid #eee; }
 select, textarea { padding: 8px; border: 1px solid #ccc; border-radius: 4px; width: 100%; margin-bottom: 5px;}
+textarea { min-height: 80px;}
 .opcoes-row { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 10px;}
 .radio, .check { background: #eee; padding: 4px 10px; border-radius: 15px; cursor: pointer; font-size: 0.9em; display: flex; align-items: center; gap: 5px;}
 .acoes { display: flex; justify-content: flex-end; gap: 10px; margin-top: 15px; }
