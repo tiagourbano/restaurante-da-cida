@@ -65,7 +65,8 @@ async function buscarDadosAgrupados(filtros, usuario) {
                 nome: row.empresa_nome,
                 setores: [],
                 totalValor: 0,
-                totalQtd: 0
+                totalQtd: 0,
+                totalMarmitas: {},
             };
             relatorio.push(empresaObj);
         }
@@ -78,7 +79,7 @@ async function buscarDadosAgrupados(filtros, usuario) {
                 nome: row.setor_nome,
                 dias: [],
                 totalValor: 0,
-                totalQtd: 0
+                totalQtd: 0,
             };
             empresaObj.setores.push(setorObj);
         }
@@ -112,6 +113,11 @@ async function buscarDadosAgrupados(filtros, usuario) {
 
         empresaObj.totalValor += preco;
         empresaObj.totalQtd++;
+
+        empresaObj.totalMarmitas = {
+            ...empresaObj.totalMarmitas,
+            [row.tamanho_nome]: empresaObj.totalMarmitas[row.tamanho_nome] + 1 || 1,
+        };
     });
 
     return relatorio;

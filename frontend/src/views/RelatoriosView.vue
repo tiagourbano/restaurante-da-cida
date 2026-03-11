@@ -96,6 +96,32 @@ const baixarExcel = async () => {
 
 // Formatação de Moeda
 const toMoney = (val) => `R$ ${parseFloat(val).toFixed(2)}`;
+
+const jsonToHtmlTable = (json) => {
+  if (json.length === 0) {
+    return 'No records';
+  }
+  let html = `<table>
+    <thead>
+      <tr>
+        <th colspan="2">Total</th>
+      </tr>
+      <tr>
+        <th>Tamanho</th>
+        <th>Quantidade</th>
+      </tr>
+    </thead>`;
+  html += '<tbody>';
+  Object.keys(json).forEach((key) => {
+    html += `<tr>`;
+    html += ` <td>${key}</td>`;
+    html += ` <td>${json[key]}</td>`;
+    html += '</tr>';
+  });
+  html += '</tbody></table>';
+
+  return html;
+};
 </script>
 
 <template>
@@ -132,6 +158,12 @@ const toMoney = (val) => `R$ ${parseFloat(val).toFixed(2)}`;
         <div class="header-empresa">
           <span>🏢 {{ emp.nome }}</span>
           <span>Total: {{ toMoney(emp.totalValor) }} ({{ emp.totalQtd }} un)</span>
+        </div>
+
+        <div class="bloco-setor no-border">
+          <div class="resumo-total-marmitas">
+            <table v-html="jsonToHtmlTable(emp.totalMarmitas)"></table>
+          </div>
         </div>
 
         <div v-for="setor in emp.setores" :key="setor.id" class="bloco-setor">
@@ -174,7 +206,7 @@ const toMoney = (val) => `R$ ${parseFloat(val).toFixed(2)}`;
   </div>
 </template>
 
-<style scoped>
+<style>
 .relatorio-container { padding: 20px; max-width: 1000px; margin: 0 auto; }
 
 /* Filtros */
@@ -190,6 +222,13 @@ const toMoney = (val) => `R$ ${parseFloat(val).toFixed(2)}`;
 /* Hierarquia Visual */
 .bloco-empresa { border: 2px solid #2c3e50; margin-bottom: 30px; border-radius: 5px; overflow: hidden; }
 .header-empresa { background: #2c3e50; color: white; padding: 10px; font-size: 1.2rem; font-weight: bold; display: flex; justify-content: space-between; }
+
+.resumo-total-marmitas { width: fit-content; margin: 10px; border: 1px solid #999; border-radius: 4px; }
+.resumo-total-marmitas table { width: 250px; border-collapse: collapse; font-size: 14px; }
+.resumo-total-marmitas table tr { border-bottom: 1px solid #999; }
+.resumo-total-marmitas table th { text-align: center; font-weight: 600; background-color: #ddd; padding: 10px; }
+.resumo-total-marmitas td { text-align: center; padding: 10px 0; }
+.bloco-setor.no-border { margin: 0; border: 0; display: flex; justify-content: center; }
 
 .bloco-setor { margin: 10px; border: 1px solid #999; border-radius: 4px; }
 .header-setor { background: #e0e0e0; padding: 8px; font-weight: bold; display: flex; justify-content: space-between; color: #333;}

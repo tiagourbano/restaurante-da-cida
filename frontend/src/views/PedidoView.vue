@@ -119,51 +119,58 @@ const finalizarPedido = async () => {
       </div>
     </header>
 
-    <div class="secao">
-      <h3>1. Escolha o Tamanho</h3>
-      <div class="grid-botoes">
-        <button
-          v-for="tam in dados.tamanhos"
-          :key="tam.id"
-          :class="{ ativo: tamanhoSelecionado === tam.id }"
-          @click="tamanhoSelecionado = tam.id"
-        >
-          <br>
-          {{ tam.nome }} <br>
-          <small>&nbsp;</small>
-          <!-- <small>R$ {{ tam.preco }}</small> -->
-        </button>
+    <div class="grupo-secao">
+      <div class="secao">
+        <!-- <h3>1. Escolha o Tamanho</h3> -->
+        <h3>Escolha o Tamanho</h3>
+        <div class="grid-botoes">
+          <button
+            v-for="tam in dados.tamanhos"
+            :key="tam.id"
+            :class="{ ativo: tamanhoSelecionado === tam.id }"
+            @click="tamanhoSelecionado = tam.id"
+          >
+            <br>
+            {{ tam.nome }} <br>
+            <small>&nbsp;</small>
+            <!-- <small>R$ {{ tam.preco }}</small> -->
+          </button>
+        </div>
+      </div>
+
+      <div class="secao" v-if="opcoesExtras.length > 0">
+        <!-- <h3>3. Personalizar</h3> -->
+        <h3>Personalizar</h3>
+        <div class="opcoes-lista">
+          <label v-for="op in opcoesExtras" :key="op.id" class="check-item">
+            <input type="checkbox" :value="op.id" v-model="opcoesSelecionadas">
+            <span>{{ op.nome }}</span>
+          </label>
+        </div>
       </div>
     </div>
 
-    <div class="secao" v-if="opcoesTrocas.length > 0">
-      <h3>2. Quer trocar o prato principal?</h3>
-      <div class="opcoes-lista">
-        <label class="radio-item">
-          <input type="radio" :value="null" v-model="trocaSelecionada">
-          <span>Não trocar (Manter prato do dia)</span>
-        </label>
+    <div class="grupo-secao">
+      <div class="secao" v-if="opcoesTrocas.length > 0">
+        <!-- <h3>2. Quer trocar o prato principal?</h3> -->
+        <h3>Quer trocar o prato principal?</h3>
+        <div class="opcoes-lista">
+          <label class="radio-item">
+            <input type="radio" :value="null" v-model="trocaSelecionada">
+            <span>Não trocar (Manter prato do dia)</span>
+          </label>
 
-        <label v-for="troca in opcoesTrocas" :key="troca.id" class="radio-item">
-          <input type="radio" :value="troca.id" v-model="trocaSelecionada">
-          <span>{{ troca.nome }}</span>
-        </label>
+          <label v-for="troca in opcoesTrocas" :key="troca.id" class="radio-item">
+            <input type="radio" :value="troca.id" v-model="trocaSelecionada">
+            <span>{{ troca.nome }}</span>
+          </label>
+        </div>
       </div>
-    </div>
 
-    <div class="secao" v-if="opcoesExtras.length > 0">
-      <h3>3. Personalizar</h3>
-      <div class="opcoes-lista">
-        <label v-for="op in opcoesExtras" :key="op.id" class="check-item">
-          <input type="checkbox" :value="op.id" v-model="opcoesSelecionadas">
-          <span>{{ op.nome }}</span>
-        </label>
+      <div class="secao">
+        <h3>Observações</h3>
+        <textarea v-model="observacao" rows="3" placeholder="Ex: Carne bem passada..."></textarea>
       </div>
-    </div>
-
-    <div class="secao">
-      <h3>Observações</h3>
-      <textarea v-model="observacao" rows="3" placeholder="Ex: Carne bem passada..."></textarea>
     </div>
 
     <button class="btn-finalizar" @click="finalizarPedido">
@@ -202,6 +209,22 @@ const finalizarPedido = async () => {
 
 .pedido-container { padding: 15px; max-width: 600px; margin: 0 auto; }
 .prato-dia { background: #f0f0f0; padding: 15px; border-radius: 8px; border-left: 5px solid #42b983; margin-bottom: 20px;}
+
+@media (max-width: 1024px) {
+  .pedido-container { max-width: 90%; }
+  .grupo-secao {
+    /* display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px; */
+    float: left;
+    display: block;
+    width: 48%;
+    margin: 0 2% 0 0;
+  }
+  .grupo-secao:last-child {
+    margin: 0;
+  }
+}
 .secao { margin-bottom: 25px; }
 h3 { margin-bottom: 10px; color: #333; }
 
