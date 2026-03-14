@@ -8,8 +8,10 @@ const pool = mysql.createPool({
     password: process.env.DB_PASSWORD || 'root',
     database: process.env.DB_NAME || 'restaurante_da_cida',
     waitForConnections: true,
-    connectionLimit: 10,
-    queueLimit: 0
+    connectionLimit: 20,
+    queueLimit: 50,
+    enableKeepAlive: true,
+    keepAliveInitialDelay: 0,
 });
 
 module.exports = pool;
