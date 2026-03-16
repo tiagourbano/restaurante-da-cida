@@ -9,7 +9,7 @@ defineProps(['pedido']);
     </div>
 
     <div class="cabecalho">
-      <span class="empresa">{{ pedido.empresaNome }}</span>
+      <!-- <span class="empresa">{{ pedido.empresaNome }}</span> -->
       <span class="setor">{{ pedido.setorNome }}</span>
     </div>
 
@@ -30,9 +30,9 @@ defineProps(['pedido']);
       OBS: {{ pedido.observacao }}
     </div>
 
-    <div class="rodape">
+    <!-- <div class="rodape">
       {{ new Date().toLocaleDateString() }}
-    </div>
+    </div> -->
   </div>
 </template>
 
@@ -62,12 +62,12 @@ defineProps(['pedido']);
   text-transform: uppercase;
 }
 
-.cabecalho { display: flex; justify-content: space-between; font-size: 14px; font-weight: bold; border-bottom: 1px solid black; }
+.cabecalho { display: flex; justify-content: space-between; font-size: 18px; font-weight: bold; border-bottom: 1px solid black; justify-content: end; align-items: end; }
 .nome-funcionario { font-size: 18px; font-weight: 900; margin: 5px 0; text-transform: uppercase; line-height: 1.1; }
 .tamanho { font-size: 18px; margin-bottom: 5px; }
 .extras { color: #000; font-weight: bold; padding: 2px; font-size: 18px; margin-top: 2px; }
-.obs { border: 2px solid black; font-weight: bold; padding: 2px; margin-top: 4px; font-size: 12px; }
-.rodape { font-size: 10px; text-align: right; margin-top: 5px; font-weight: 700; }
+.obs { border: 2px solid black; font-weight: bold; padding: 4px; margin-top: 5px; font-size: 18px; }
+/* .rodape { font-size: 10px; text-align: right; margin-top: 5px; font-weight: 700; } */
 
 /* CSS ESPECÍFICO PARA A IMPRESSORA */
 @media print {
@@ -78,7 +78,7 @@ defineProps(['pedido']);
     border: none;
     /* Removemos a borda de corte dashed para economizar altura,
        ou use border-bottom: none se a impressora já corta */
-    border-bottom: 1px dashed #000;
+    /* border-bottom: 1px dashed #000; */
 
     width: 100%;
     margin: 0;
