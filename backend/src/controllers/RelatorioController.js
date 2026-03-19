@@ -31,14 +31,34 @@ async function buscarDadosAgrupados(filtros, usuario) {
         WHERE 1=1
     `;
 
+    let queryResumo = `
+        SELECT
+            t.nome AS tamanho,
+            COUNT(p.id) AS quantidade,
+            SUM(t.preco) AS valor
+        FROM pedidos p
+        JOIN cardapios c ON p.cardapio_id = c.id
+        JOIN tamanhos_marmita t ON p.tamanho_id = t.id
+        JOIN funcionarios f ON p.funcionario_id = f.id
+        JOIN setores s ON f.setor_id = s.id
+        WHERE c.data_servico BETWEEN ? AND ?
+    `;
+
     const params = [];
+    const paramsResumo = [dataInicio, dataFim];
 
     // Aplica Filtros Dinâmicos
     if (perfil === 'CLIENTE') {
         // Se for cliente, FORÇA o filtro da empresa dele
         query += ' AND e.id = ?';
         params.push(usuarioEmpresaId);
-    } else if (empresaId) { query += ' AND e.id = ?'; params.push(empresaId); }
+    } else if (empresaId) {
+        query += ' AND e.id = ?';
+        params.push(empresaId);
+
+        queryResumo += ' AND s.empresa_id = ?';
+        paramsResumo.push(empresaId);
+    }
     if (setorId)   { query += ' AND s.id = ?'; params.push(setorId); }
     if (dataInicio){ query += ' AND c.data_servico >= ?'; params.push(dataInicio); }
     if (dataFim)   { query += ' AND c.data_servico <= ?'; params.push(dataFim); }
@@ -47,7 +67,10 @@ async function buscarDadosAgrupados(filtros, usuario) {
     // ORDENAÇÃO É CRUCIAL PARA O AGRUPAMENTO FUNCIONAR
     query += ' ORDER BY e.nome, s.nome, c.data_servico, f.nome';
 
+    queryResumo += ' GROUP BY t.id, t.nome ORDER BY t.preco ASC';
+
     const [rows] = await db.execute(query, params);
+    const [resumoRows] = await db.execute(queryResumo, paramsResumo);
 
     // --- ALGORITMO DE AGRUPAMENTO (A Árvore) ---
     // Estrutura: Array de Empresas -> Setores -> Dias -> Pedidos
@@ -67,7 +90,7 @@ async function buscarDadosAgrupados(filtros, usuario) {
                 setores: [],
                 totalValor: 0,
                 totalQtd: 0,
-                totalMarmitas: {},
+                resumoTamanhos: resumoRows,
             };
             relatorio.push(empresaObj);
         }
@@ -114,15 +137,10 @@ async function buscarDadosAgrupados(filtros, usuario) {
 
         empresaObj.totalValor += preco;
         empresaObj.totalQtd++;
-
-        empresaObj.totalMarmitas = {
-            ...empresaObj.totalMarmitas,
-            [row.tamanho_nome]: empresaObj.totalMarmitas[row.tamanho_nome] + 1 || 1,
-        };
     });
 
     return relatorio;
-}
+};
 
 // --- ROTA 1: JSON para Tela ---
 exports.gerarRelatorioTela = async (req, res) => {

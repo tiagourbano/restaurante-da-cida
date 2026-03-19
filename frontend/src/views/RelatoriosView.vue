@@ -4,7 +4,6 @@ import api from '../services/api';
 
 const empresas = ref([]);
 const disableEmpresas = ref(false);
-const setores = ref([]);
 const dadosRelatorio = ref([]);
 const loading = ref(false);
 
@@ -42,7 +41,7 @@ onMounted(async () => {
 const gerarRelatorio = async () => {
   loading.value = true;
   try {
-    const res = await api.get('/admin/relatorio', { params: filtro.value });
+    const res = await api.get('/admin/relatorio', { params: filtro.value, timeout: 30000 });
     dadosRelatorio.value = res.data;
   } catch (error) {
     alert('Erro ao buscar dados.');
@@ -63,7 +62,8 @@ const baixarExcel = async () => {
     // 1. Faz a requisição usando o Axios (que já coloca o Token no header)
     // IMPORTANTE: responseType: 'blob' diz ao Axios para não tentar ler como JSON
     const response = await api.get(`/admin/relatorio/excel?${query}`, {
-      responseType: 'blob'
+      responseType: 'blob',
+      timeout: 65000,
     });
 
     // 2. Cria um "objeto de arquivo" (Blob) com os dados recebidos
@@ -95,32 +95,22 @@ const baixarExcel = async () => {
 };
 
 // Formatação de Moeda
-const toMoney = (val) => `R$ ${parseFloat(val).toFixed(2)}`;
+// const toMoney = (val) => `R$ ${parseFloat(val).toFixed(2)}`;
+const toMoney = (val) => (parseFloat(val).toLocaleString('pt-BR', {
+    style: 'currency',
+    currency: 'BRL'
+  }));
 
-const jsonToHtmlTable = (json) => {
-  if (json.length === 0) {
-    return 'No records';
+const calcularTotaisResumo = (resumoLista) => {
+  if (!resumoLista || resumoLista.length === 0) {
+    return { quantidade: 0, valor: 0 };
   }
-  let html = `<table>
-    <thead>
-      <tr>
-        <th colspan="2">Total</th>
-      </tr>
-      <tr>
-        <th>Tamanho</th>
-        <th>Quantidade</th>
-      </tr>
-    </thead>`;
-  html += '<tbody>';
-  Object.keys(json).forEach((key) => {
-    html += `<tr>`;
-    html += ` <td>${key}</td>`;
-    html += ` <td>${json[key]}</td>`;
-    html += '</tr>';
-  });
-  html += '</tbody></table>';
 
-  return html;
+  return resumoLista.reduce((acc, linha) => {
+    acc.quantidade += Number(linha.quantidade);
+    acc.valor += Number(linha.valor);
+    return acc;
+  }, { quantidade: 0, valor: 0 });
 };
 </script>
 
@@ -162,7 +152,29 @@ const jsonToHtmlTable = (json) => {
 
         <div class="bloco-setor no-border">
           <div class="resumo-total-marmitas">
-            <table v-html="jsonToHtmlTable(emp.totalMarmitas)"></table>
+            <table>
+              <thead>
+                  <tr>
+                      <th>TAMANHO</th>
+                      <th class="text-center">QUANTIDADE</th>
+                      <th class="text-right">VALOR (R$)</th>
+                  </tr>
+              </thead>
+              <tbody>
+                  <tr v-for="item in emp.resumoTamanhos" :key="item.tamanho">
+                      <td><strong>{{ item.tamanho }}</strong></td>
+                      <td class="text-center">{{ item.quantidade }}</td>
+                      <td class="text-right">{{ toMoney(item.valor) }}</td>
+                  </tr>
+              </tbody>
+              <tfoot>
+                  <tr class="linha-total">
+                      <td><strong>TOTAL</strong></td>
+                      <td class="text-center"><strong>{{ calcularTotaisResumo(emp.resumoTamanhos).quantidade }}</strong></td>
+                      <td class="text-right"><strong>{{ toMoney(calcularTotaisResumo(emp.resumoTamanhos).valor) }}</strong></td>
+                  </tr>
+              </tfoot>
+            </table>
           </div>
         </div>
 
@@ -224,11 +236,12 @@ const jsonToHtmlTable = (json) => {
 .header-empresa { background: #2c3e50; color: white; padding: 10px; font-size: 1.2rem; font-weight: bold; display: flex; justify-content: space-between; }
 
 .resumo-total-marmitas { width: fit-content; margin: 10px; border: 1px solid #999; border-radius: 4px; }
-.resumo-total-marmitas table { width: 250px; border-collapse: collapse; font-size: 14px; }
+.resumo-total-marmitas table { width: 400px; border-collapse: collapse; font-size: 14px; }
 .resumo-total-marmitas table tr { border-bottom: 1px solid #999; }
 .resumo-total-marmitas table th { text-align: center; font-weight: 600; background-color: #ddd; padding: 10px; }
 .resumo-total-marmitas td { text-align: center; padding: 10px 0; }
 .bloco-setor.no-border { margin: 0; border: 0; display: flex; justify-content: center; }
+.resumo-total-marmitas table tfoot td { text-align: center; font-weight: 600; background-color: #ddd; padding: 10px; }
 
 .bloco-setor { margin: 10px; border: 1px solid #999; border-radius: 4px; }
 .header-setor { background: #e0e0e0; padding: 8px; font-weight: bold; display: flex; justify-content: space-between; color: #333;}
