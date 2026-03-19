@@ -26,7 +26,11 @@ const form = ref({
   raCpf: '',
   empresaId: '', // Usado só para filtrar o combo de setores
   setorId: '',
-  dataNascimento: ''
+  dataNascimento: '',
+  pedidoDuploAtivo: false,
+  diaSemanaLiberacao: '',
+  puloDiasMarmita1: 0,
+  puloDiasMarmita2: 2,
 });
 
 // --- CARREGAMENTOS ---
@@ -108,7 +112,11 @@ const abrirModal = (funcionario = null) => {
       raCpf: funcionario.raCpf,
       empresaId: funcionario.empresaId,
       setorId: funcionario.setorId,
-      dataNascimento: funcionario.dataNascimento ? funcionario.dataNascimento.split('T')[0] : ''
+      dataNascimento: funcionario.dataNascimento ? funcionario.dataNascimento.split('T')[0] : '',
+      pedidoDuploAtivo: Boolean(funcionario.pedidoDuploAtivo),
+      diaSemanaLiberacao: funcionario.diaSemanaLiberacao !== null ? funcionario.diaSemanaLiberacao : '',
+      puloDiasMarmita1: funcionario.puloDiasMarmita1 || 0,
+      puloDiasMarmita2: funcionario.puloDiasMarmita2 || 2,
     };
   } else {
     // Novo
@@ -119,7 +127,11 @@ const abrirModal = (funcionario = null) => {
       // Se for cliente, já fixa a empresa dele
       empresaId: isClient.value ? usuario.empresaId : '',
       setorId: '',
-      dataNascimento: ''
+      dataNascimento: '',
+      pedidoDuploAtivo: false,
+      diaSemanaLiberacao: '',
+      puloDiasMarmita1: 0,
+      puloDiasMarmita2: 2,
     };
   }
   modalAberto.value = true;
@@ -280,6 +292,44 @@ const formatarData = (dataIso) => {
 
         <label>Data de Nascimento (Opcional):</label>
         <input type="date" v-model="form.dataNascimento">
+
+        <hr style="margin: 15px 0; border: 0; border-top: 1px solid #eee;">
+
+        <div class="sessao-duplo" style="background: #f9f9f9; padding: 15px; border-radius: 8px; border: 1px solid #e0e0e0;">
+            <label style="display: flex; align-items: center; gap: 8px; font-weight: bold; cursor: pointer; color: #2c3e50;">
+                <input type="checkbox" v-model="form.pedidoDuploAtivo" style="transform: scale(1.3);">
+                🔄 Habilitar Pedido Duplo (Turno Especial)
+            </label>
+
+            <div v-if="form.pedidoDuploAtivo" style="margin-top: 15px; display: flex; flex-direction: column; gap: 10px;">
+                <div class="campo">
+                    <label>Qual dia o sistema deve pedir as duas?</label>
+                    <select v-model="form.diaSemanaLiberacao">
+                        <option value="">Selecione...</option>
+                        <option :value="0">Domingo</option>
+                        <option :value="1">Segunda-feira</option>
+                        <option :value="2">Terça-feira</option>
+                        <option :value="3">Quarta-feira</option>
+                        <option :value="4">Quinta-feira</option>
+                        <option :value="5">Sexta-feira</option>
+                        <option :value="6">Sábado</option>
+                    </select>
+                </div>
+
+                <div class="row">
+                    <div class="col">
+                        <label>Dias p/ Marmita 1:</label>
+                        <input type="number" v-model="form.puloDiasMarmita1" min="0" placeholder="Ex: 0 (Hoje)">
+                        <small style="font-size: 0.75em; color: #666;">(Soma os dias a partir de hoje)</small>
+                    </div>
+                    <div class="col">
+                        <label>Dias p/ Marmita 2:</label>
+                        <input type="number" v-model="form.puloDiasMarmita2" min="1" placeholder="Ex: 3">
+                        <small style="font-size: 0.75em; color: #666;">(Ex: Quinta + 3 = Domingo)</small>
+                    </div>
+                </div>
+            </div>
+        </div>
 
         <div class="acoes-modal">
           <button @click="salvar" class="btn-save">Salvar</button>

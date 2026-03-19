@@ -197,6 +197,7 @@ exports.listarFuncionarios = async (req, res) => {
         let query = `
             SELECT
                 f.id, f.nome, f.ra_cpf, f.ativo, f.data_nascimento,
+                f.pedido_duplo_ativo, f.dia_semana_liberacao, f.pulo_dias_marmita_1, f.pulo_dias_marmita_2,
                 e.id as empresa_id, e.nome as empresa_nome,
                 s.id as setor_id, s.nome as setor_nome
             FROM funcionarios f
@@ -234,7 +235,12 @@ exports.listarFuncionarios = async (req, res) => {
 
 exports.salvarManual = async (req, res) => {
     const { perfil, empresaId: usuarioEmpresaId } = req.usuario;
-    let { id, nome, raCpf, setorId, dataNascimento } = req.body; // removemos empresaId do body direto
+    let { id, nome, raCpf, setorId, dataNascimento, pedidoDuploAtivo, diaSemanaLiberacao, puloDiasMarmita1, puloDiasMarmita2 } = req.body; // removemos empresaId do body direto
+
+    const duploAtivo = pedidoDuploAtivo ? 1 : 0;
+    const diaLib = (diaSemanaLiberacao !== '' && diaSemanaLiberacao !== null) ? diaSemanaLiberacao : null;
+    const pulo1 = puloDiasMarmita1 || 0;
+    const pulo2 = puloDiasMarmita2 || 0;
 
     try {
         // SEGURANÇA: Validar se o setor pertence à empresa do cliente
@@ -253,15 +259,16 @@ exports.salvarManual = async (req, res) => {
             // Para segurança máxima, adicione um WHERE no update checando a empresa via join, mas vamos simplificar:
             await db.execute(`
                 UPDATE funcionarios
-                SET nome=?, ra_cpf=?, setor_id=?, data_nascimento=?
+                SET nome=?, ra_cpf=?, setor_id=?, data_nascimento=?,
+                    pedido_duplo_ativo=?, dia_semana_liberacao=?, pulo_dias_marmita_1=?, pulo_dias_marmita_2=?
                 WHERE id=?
-            `, [nome, raCpf, setorId, dataNascimento || null, id]);
+            `, [nome, raCpf, setorId, dataNascimento || null, duploAtivo, diaLib, pulo1, pulo2, id]);
         } else {
             // Criação
             await db.execute(`
-                INSERT INTO funcionarios (nome, ra_cpf, setor_id, data_nascimento, ativo)
-                VALUES (?, ?, ?, ?, true)
-            `, [nome, raCpf, setorId, dataNascimento || null]);
+                INSERT INTO funcionarios (nome, ra_cpf, setor_id, data_nascimento, ativo, pedido_duplo_ativo, dia_semana_liberacao, pulo_dias_marmita_1, pulo_dias_marmita_2)
+                VALUES (?, ?, ?, ?, true, ?, ?, ?, ?)
+            `, [nome, raCpf, setorId, dataNascimento || null, duploAtivo, diaLib, pulo1, pulo2]);
         }
         res.json({ message: 'Salvo com sucesso!' });
     } catch (error) {

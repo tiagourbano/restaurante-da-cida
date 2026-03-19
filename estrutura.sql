@@ -118,3 +118,9 @@ CREATE TABLE usuarios_sistema (
 -- OBS: Essa hash abaixo é um exemplo fictício, você vai gerar a senha real no código em breve.
 -- Se quiser testar agora, instale o bcryptjs e gere um hash, ou use o código de cadastro que faremos abaixo.
 -- INSERT INTO usuarios_sistema (nome, login, senha, perfil, empresa_id) VALUES ('Administrador', 'admin', '$2b$10$A6sOZWUhulsZBgZEqQcxLO/hirG1RsTq8HxFNufVyKNFV9Yj.CQgm', 'ADMIN', NULL);
+
+ALTER TABLE funcionarios
+ADD COLUMN pedido_duplo_ativo BOOLEAN DEFAULT FALSE,
+ADD COLUMN dia_semana_liberacao INT NULL COMMENT '0=Dom, 1=Seg, 2=Ter, 3=Qua, 4=Qui, 5=Sex, 6=Sab',
+ADD COLUMN pulo_dias_marmita_1 INT DEFAULT 0 COMMENT 'Geralmente 0 para o dia alvo base',
+ADD COLUMN pulo_dias_marmita_2 INT DEFAULT 2 COMMENT 'Padrão 2 dias para a segunda marmita';
