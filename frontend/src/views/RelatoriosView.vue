@@ -190,6 +190,7 @@ const calcularTotaisResumo = (resumoLista) => {
             <table class="tabela-pedidos">
               <thead>
                 <tr>
+                  <th>Horário</th>
                   <th>Funcionário</th>
                   <th>Tamanho</th>
                   <th>Detalhes</th>
@@ -198,6 +199,7 @@ const calcularTotaisResumo = (resumoLista) => {
               </thead>
               <tbody>
                 <tr v-for="(ped, idx) in dia.pedidos" :key="idx">
+                  <td>{{ ped.horario }}</td>
                   <td>{{ ped.funcionario }}</td>
                   <td>{{ ped.tamanho }}</td>
                   <td style="font-size: 0.9em; color: #555;">{{ ped.extras }}</td>

@@ -9,7 +9,8 @@ async function buscarDadosAgrupados(filtros, usuario) {
 
     let query = `
         SELECT
-            p.id, --p.data_pedido,
+            p.id,
+            p.data_pedido as data_pedido_usuario,
             f.nome as funcionario_nome,
             e.nome as empresa_nome, e.id as empresa_id,
             s.nome as setor_nome, s.id as setor_id,
@@ -59,9 +60,9 @@ async function buscarDadosAgrupados(filtros, usuario) {
         queryResumo += ' AND s.empresa_id = ?';
         paramsResumo.push(empresaId);
     }
-    if (setorId)   { query += ' AND s.id = ?'; params.push(setorId); }
-    if (dataInicio){ query += ' AND c.data_servico >= ?'; params.push(dataInicio); }
-    if (dataFim)   { query += ' AND c.data_servico <= ?'; params.push(dataFim); }
+    if (setorId) { query += ' AND s.id = ?'; params.push(setorId); }
+    if (dataInicio) { query += ' AND c.data_servico >= ?'; params.push(dataInicio); }
+    if (dataFim) { query += ' AND c.data_servico <= ?'; params.push(dataFim); }
 
 
     // ORDENAÇÃO É CRUCIAL PARA O AGRUPAMENTO FUNCIONAR
@@ -80,6 +81,7 @@ async function buscarDadosAgrupados(filtros, usuario) {
         // Converter preço para numero
         const preco = parseFloat(row.preco);
         const dataFormatada = new Date(row.data_pedido).toLocaleDateString('pt-BR');
+        const dataHorarioPedidoFormatada = new Date(row.data_pedido_usuario).toLocaleTimeString('pt-BR');
 
         // 1. Nível Empresa
         let empresaObj = relatorio.find(e => e.id === row.empresa_id);
@@ -122,6 +124,7 @@ async function buscarDadosAgrupados(filtros, usuario) {
 
         // 4. Adicionar Pedido e Somar Totais Recursivamente
         diaObj.pedidos.push({
+            horario: dataHorarioPedidoFormatada,
             funcionario: row.funcionario_nome,
             tamanho: row.tamanho_nome,
             extras: row.extras || '-',
@@ -191,7 +194,7 @@ exports.exportarExcel = async (req, res) => {
                     // Pedidos Individuais
                     dia.pedidos.forEach(p => {
                         worksheet.addRow([
-                            `      ${p.funcionario}`,
+                            `      ${p.horario} ${p.funcionario}`,
                             p.tamanho,
                             p.extras,
                             p.preco
