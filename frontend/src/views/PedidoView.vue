@@ -9,6 +9,7 @@ const authStore = useAuthStore();
 
 // --- ESTADOS DO SISTEMA ---
 const loading = ref(true);
+const enviando = ref(false);
 const bloqueado = ref(false);
 const mensagemBloqueio = ref('');
 
@@ -86,6 +87,8 @@ onMounted(async () => {
 
 // --- LÓGICA DE SALVAR ---
 const finalizarPedido = async () => {
+  if (enviando.value) return;
+
   // 1. Validação (Exigimos que, se houver 2 abas, ambas tenham tamanho selecionado)
   // Como combinamos (Opção 2.2), vamos permitir pedir só 1, mas com AVISO.
 
@@ -121,6 +124,7 @@ const finalizarPedido = async () => {
   });
 
   // 3. Enviar para o Backend
+  enviando.value = true;
   try {
     await api.post('/pedido', payloadFinal); // Enviando o Array!
     alert(`Pedido(s) realizado(s) com sucesso, ${authStore.funcionario.nome}!`);
@@ -131,6 +135,8 @@ const finalizarPedido = async () => {
     if (error.response?.status === 403) {
       router.push('/login');
     }
+  } finally {
+    enviando.value = false;
   }
 };
 </script>
@@ -239,8 +245,8 @@ const finalizarPedido = async () => {
       ⏭️ Preencher Próximo Dia
     </button>
 
-    <button v-else class="btn-finalizar" @click="finalizarPedido">
-      ✅ CONFIRMAR PEDIDO
+    <button v-else class="btn-finalizar" :disabled="enviando" @click="finalizarPedido">
+      {{ enviando ? '⏳ CONFIRMANDO...' : '✅ CONFIRMAR PEDIDO' }}
     </button>
   </div>
 </template>
@@ -326,7 +332,10 @@ input[type=radio], input[type=checkbox] { transform: scale(1.5); }
 textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; }
 
 .btn-finalizar {
-  width: 100%; padding: 20px; background: #2c3e50; color: white; font-size: 18px; font-weight: bold; border: none; border-radius: 8px; margin-top: 20px;
+  width: 100%; padding: 20px; background: #2c3e50; color: white; font-size: 18px; font-weight: bold; border: none; border-radius: 8px; margin-top: 20px; cursor: pointer;
+}
+.btn-finalizar:disabled {
+  opacity: 0.6; cursor: not-allowed;
 }
 .btn-avancar {
   width: 100%; padding: 20px; background: #f39c12; color: white; font-size: 18px; font-weight: bold; border: none; border-radius: 8px; margin-top: 10px; box-shadow: 0 4px 6px rgba(243, 156, 18, 0.3);

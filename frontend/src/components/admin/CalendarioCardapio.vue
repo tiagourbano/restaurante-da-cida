@@ -10,6 +10,7 @@ const anoExibido = ref(dataAtual.value.getFullYear());
 const cardapiosDoMes = ref([]);
 const modalAberto = ref(false);
 const loading = ref(false);
+const salvando = ref(false);
 
 // Form do Modal
 const form = ref({
@@ -83,14 +84,18 @@ const abrirDia = (dia) => {
 };
 
 const salvar = async () => {
+  if (salvando.value) return;
   if (!form.value.pratoPrincipal) return alert('Digite o prato principal');
 
+  salvando.value = true;
   try {
     await api.post('/admin/cardapio', form.value);
     modalAberto.value = false;
     carregarCardapios(); // Recarrega para pintar o quadradinho de verde
   } catch (error) {
     alert('Erro ao salvar.');
+  } finally {
+    salvando.value = false;
   }
 };
 
@@ -141,8 +146,10 @@ onMounted(carregarCardapios);
         <input v-model="form.guarnicoes" placeholder="Ex: Arroz e Batata Palha">
 
         <div class="modal-acoes">
-          <button @click="salvar" class="btn-salvar">Salvar</button>
-          <button @click="modalAberto = false" class="btn-cancelar">Fechar</button>
+          <button @click="salvar" class="btn-salvar" :disabled="salvando">
+            {{ salvando ? 'Salvando...' : 'Salvar' }}
+          </button>
+          <button @click="modalAberto = false" class="btn-cancelar" :disabled="salvando">Fechar</button>
         </div>
       </div>
     </div>
@@ -202,5 +209,6 @@ onMounted(carregarCardapios);
 .modal-conteudo input { padding: 10px; font-size: 16px; border: 1px solid #ccc; border-radius: 5px;}
 .modal-acoes { display: flex; justify-content: space-between; margin-top: 10px; }
 .btn-salvar { background: #42b983; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;}
+.btn-salvar:disabled { opacity: 0.6; cursor: not-allowed; }
 .btn-cancelar { background: #999; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer;}
 </style>

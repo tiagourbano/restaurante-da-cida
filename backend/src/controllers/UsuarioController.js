@@ -79,6 +79,9 @@ exports.salvarUsuario = async (req, res) => {
         res.json({ message: 'Usuário salvo com sucesso!' });
 
     } catch (error) {
+        if (error.code === 'ER_DUP_ENTRY') {
+            return res.status(400).json({ message: 'Este login já está em uso.' });
+        }
         console.error(`[API] ${error}`);
         res.status(500).json({ message: 'Erro ao salvar usuário.' });
     } finally {

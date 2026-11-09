@@ -228,6 +228,9 @@ exports.criarPedidoManual = async (req, res) => {
 
     } catch (error) {
         await connection.rollback();
+        if (error.code === 'ER_DUP_ENTRY') {
+            return res.status(400).json({ message: 'Este funcionário já possui um pedido para esta data.' });
+        }
         console.error(error);
         res.status(500).json({ message: error.message || 'Erro ao criar pedido manual.' });
     } finally {

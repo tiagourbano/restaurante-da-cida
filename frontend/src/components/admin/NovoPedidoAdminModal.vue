@@ -4,6 +4,7 @@ import api from '../../services/api';
 
 const emit = defineEmits(['close', 'salvo']);
 const loading = ref(false);
+const salvando = ref(false);
 
 // Listas para os Selects
 const empresas = ref([]);
@@ -60,6 +61,7 @@ watch(() => form.value.empresaId, async (novoId) => {
 });
 
 const salvar = async () => {
+  if (salvando.value) return;
   if (!form.value.dataServico || !form.value.funcionarioId || !form.value.tamanhoId) {
     return alert('Preencha a Data, Funcionário e Tamanho.');
   }
@@ -67,6 +69,7 @@ const salvar = async () => {
   const idsFinais = [...form.value.opcoesCheck];
   if (form.value.opcaoRadio) idsFinais.push(form.value.opcaoRadio);
 
+  salvando.value = true;
   try {
     await api.post('/admin/pedidos', {
       dataServico: form.value.dataServico,
@@ -79,6 +82,8 @@ const salvar = async () => {
     emit('salvo');
   } catch (error) {
     alert(error.response?.data?.message || 'Erro ao criar pedido.');
+  } finally {
+    salvando.value = false;
   }
 };
 
@@ -146,8 +151,10 @@ const opcoesExtras = computed(() => opcoes.value.filter(o => o.tipo !== 'TROCA')
         <textarea v-model="form.observacao" rows="2"></textarea>
 
         <div class="acoes">
-           <button @click="salvar" class="btn-save">Criar Pedido</button>
-           <button @click="$emit('close')" class="btn-cancel">Cancelar</button>
+           <button @click="salvar" class="btn-save" :disabled="salvando">
+             {{ salvando ? 'Criando...' : 'Criar Pedido' }}
+           </button>
+           <button @click="$emit('close')" class="btn-cancel" :disabled="salvando">Cancelar</button>
         </div>
 
       </div>
@@ -169,5 +176,6 @@ textarea { min-height: 80px;}
 .radio, .check { background: #eee; padding: 4px 10px; border-radius: 15px; cursor: pointer; font-size: 0.9em; display: flex; align-items: center; gap: 5px;}
 .acoes { display: flex; justify-content: flex-end; gap: 10px; margin-top: 15px; }
 .btn-save { background: #42b983; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
+.btn-save:disabled { opacity: 0.6; cursor: not-allowed; }
 .btn-cancel { background: #ccc; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; }
 </style>
