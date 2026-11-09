@@ -2,15 +2,36 @@ import { ref } from 'vue';
 import { defineStore } from 'pinia';
 
 export const useAuthStore = defineStore('auth', () => {
-  const funcionario = ref(null);
+  const token = ref(sessionStorage.getItem('funcionarioToken') || null);
+  const funcionario = ref(JSON.parse(sessionStorage.getItem('funcionarioData') || 'null'));
 
+  function setAuth(dadosFuncionario, novoToken) {
+    funcionario.value = dadosFuncionario;
+    token.value = novoToken;
+    if (novoToken) {
+      sessionStorage.setItem('funcionarioToken', novoToken);
+    }
+    if (dadosFuncionario) {
+      sessionStorage.setItem('funcionarioData', JSON.stringify(dadosFuncionario));
+    }
+  }
+
+  // Mantemos compatibilidade com chamadas existentes
   function setFuncionario(dados) {
-    funcionario.value = dados;
+    if (dados && dados.token && dados.funcionario) {
+      setAuth(dados.funcionario, dados.token);
+    } else {
+      funcionario.value = dados;
+      sessionStorage.setItem('funcionarioData', JSON.stringify(dados));
+    }
   }
 
   function logout() {
     funcionario.value = null;
+    token.value = null;
+    sessionStorage.removeItem('funcionarioToken');
+    sessionStorage.removeItem('funcionarioData');
   }
 
-  return { funcionario, setFuncionario, logout };
+  return { token, funcionario, setAuth, setFuncionario, logout };
 });

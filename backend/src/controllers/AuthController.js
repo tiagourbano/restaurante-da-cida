@@ -45,9 +45,24 @@ exports.login = async (req, res) => {
         // O front recebe: { empresaId: 1, trabalhaFimSemana: 0 }
         const funcionarioFormatado = keysToCamel(funcionarioRaw);
 
+        // Gera token assinado para o funcionário (válido por 15 minutos)
+        const token = jwt.sign({
+            id: funcionarioFormatado.id,
+            setorId: funcionarioFormatado.setorId,
+            empresaId: funcionarioFormatado.empresaId,
+            nome: funcionarioFormatado.nome,
+            raCpf: funcionarioFormatado.raCpf,
+            tipo: 'FUNCIONARIO'
+        }, process.env.JWT_SECRET, {
+            expiresIn: '15m'
+        });
+
         logger.info('Funcionário logado', { id: funcionarioFormatado.id, nome: funcionarioFormatado.nome, ra: funcionarioFormatado.raCpf });
 
-        res.json(funcionarioFormatado);
+        res.json({
+            token,
+            funcionario: funcionarioFormatado
+        });
 
     } catch (error) {
         logger.error('Erro ao logar funcionário', { erro: error?.message, error });
@@ -106,22 +121,51 @@ exports.loginAdmin = async (req, res) => {
     }
 };
 
-// --- ROTA TEMPORÁRIA PARA VOCÊ CRIAR O PRIMEIRO ADMIN ---
-// Apague ou comente essa função depois de usar!
+// --- ROTA PROTEGIDA PARA CRIAR ADMIN INICIAL ---
+// Exige token configurado na variável de ambiente SETUP_ADMIN_TOKEN
+const validarTokenSetup = (req) => {
+    const headerToken = req.headers['x-setup-token'] || req.query.setupToken;
+    const envToken = process.env.SETUP_ADMIN_TOKEN;
+    if (!envToken || !headerToken || headerToken !== envToken) {
+        return false;
+    }
+    return true;
+};
+
 exports.criarAdminInicial = async (req, res) => {
-    const senhaHash = await bcrypt.hash('123456', 10); // Senha padrão: 123456
+    if (!validarTokenSetup(req)) {
+        return res.status(403).json({ message: 'Acesso negado: token de setup inválido ou ausente.' });
+    }
+
+    const { login = 'admin', senha = '123456', nome = 'Admin Inicial' } = req.body || {};
+    const senhaFinal = req.query.senha || senha;
+    const loginFinal = req.query.login || login;
+    const nomeFinal = req.query.nome || nome;
+
     try {
+        const senhaHash = await bcrypt.hash(senhaFinal, 10);
         await db.execute(
             `INSERT INTO usuarios_sistema (nome, login, senha, perfil) VALUES (?, ?, ?, ?)`,
-            ['Admin Inicial', 'admin', senhaHash, 'ADMIN']
+            [nomeFinal, loginFinal, senhaHash, 'ADMIN']
         );
-        res.json({ message: 'Admin criado com senha "123456"' });
+        res.json({ message: `Admin criado com login "${loginFinal}" e perfil "ADMIN".` });
     } catch (e) {
+        if (e.code === 'ER_DUP_ENTRY') {
+            return res.status(400).json({ message: 'Usuário já existente com este login.' });
+        }
         res.status(500).json({ error: e.message });
     }
 };
 
 exports.gerarSenhaCriptografada = async (req, res) => {
+    if (!validarTokenSetup(req)) {
+        return res.status(403).json({ message: 'Acesso negado: token de setup inválido ou ausente.' });
+    }
+
+    if (!req.query.senha) {
+        return res.status(400).json({ message: 'Informe a senha desejada no parâmetro ?senha=' });
+    }
+
     const senhaHash = await bcrypt.hash(req.query.senha, 10);
     res.json({ message: 'Senha gerada com sucesso para: ' + req.query.senha, senha: senhaHash });
 };

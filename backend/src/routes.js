@@ -9,8 +9,11 @@ const router = express.Router();
 const AuthController = require('./controllers/AuthController');
 const PedidoController = require('./controllers/PedidoController');
 
-// admin controllers
+// middlewares
 const authMiddleware = require('./middlewares/authMiddleware');
+const funcionarioAuthMiddleware = require('./middlewares/funcionarioAuthMiddleware');
+
+// admin controllers
 const AdminController = require('./controllers/AdminController');
 const CardapioController = require('./controllers/CardapioController');
 const FuncionarioController = require('./controllers/FuncionarioController');
@@ -24,10 +27,10 @@ router.get('/health', (req, res) => {
   res.status(200).json({ status: "ok" });
 });
 
-// Rotas Publicas (Considerando que está numa intranet/rede fechada)
+// Rotas de Funcionários / Pedidos
 router.post('/login', AuthController.login);
-router.get('/dados-pedido', PedidoController.getDadosIniciais); // Front chama ao carregar a tela
-router.post('/pedido', PedidoController.criarPedido);
+router.get('/dados-pedido', funcionarioAuthMiddleware, PedidoController.getDadosIniciais);
+router.post('/pedido', funcionarioAuthMiddleware, PedidoController.criarPedido);
 
 router.get('/setup-admin', AuthController.criarAdminInicial);
 router.get('/setup-admin/senha', AuthController.gerarSenhaCriptografada);

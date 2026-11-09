@@ -201,7 +201,9 @@ exports.criarPedidoUnico = async (req, res) => {
 // Agora alguns usuarios podem escolher mais de uma marmita
 // Ou seja, eles podem escolher a marmita do dia e a marmita de alguns dias para frente.
 exports.getDadosIniciais = async (req, res) => {
-    const { setorId, funcionarioId } = req.query;
+    // Se autenticado via middleware, usamos o funcionário do token por garantia
+    const funcionarioId = req.funcionario ? req.funcionario.id : req.query.funcionarioId;
+    const setorId = req.funcionario ? req.funcionario.setorId : req.query.setorId;
 
     if (!setorId || !funcionarioId) {
         return res.status(400).json({ message: 'Setor ou Funcionário não informados.' });
@@ -333,13 +335,15 @@ exports.criarPedido = async (req, res) => {
     const connection = await db.getConnection();
 
     try {
-        // 2. VALIDAÇÃO DE SEGURANÇA (Usa o funcionarioId do primeiro pedido)
-        const funcionarioId = pedidosParaSalvar[0].funcionarioId;
-        const [funcData] = await connection.execute('SELECT setor_id FROM funcionarios WHERE id = ?', [funcionarioId]);
+        // 2. VALIDAÇÃO DE SEGURANÇA
+        // Se a requisição veio autenticada via token de funcionário, usamos estritamente o id do token
+        const funcionarioIdAutenticado = req.funcionario ? req.funcionario.id : pedidosParaSalvar[0].funcionarioId;
+        const [funcData] = await connection.execute('SELECT setor_id FROM funcionarios WHERE id = ? AND ativo = TRUE', [funcionarioIdAutenticado]);
 
-        if (funcData.length === 0) throw new Error('Funcionário inválido');
+        if (funcData.length === 0) throw new Error('Funcionário inválido ou inativo');
 
-        const check = await verificarPermissaoHorario(funcData[0].setor_id);
+        const setorId = funcData[0].setor_id;
+        const check = await verificarPermissaoHorario(setorId);
         if (!check.permitido) {
             return res.status(403).json({ message: check.motivo });
         }
@@ -352,11 +356,11 @@ exports.criarPedido = async (req, res) => {
 
         // 4. LOOP DE SALVAMENTO
         for (const p of pedidosParaSalvar) {
-            // Insere o pedido principal
+            // Forçamos o funcionario_id a ser sempre o autenticado pelo token
             const [resultPedido] = await connection.execute(`
                 INSERT INTO pedidos (funcionario_id, cardapio_id, tamanho_id, observacao, data_pedido)
                 VALUES (?, ?, ?, ?, ?)
-            `, [p.funcionarioId, p.cardapioId, p.tamanhoId, p.observacao || '', dataPedidoSP]);
+            `, [funcionarioIdAutenticado, p.cardapioId, p.tamanhoId, p.observacao || '', dataPedidoSP]);
 
             const pedidoId = resultPedido.insertId;
             pedidosGeradosIds.push(pedidoId);
