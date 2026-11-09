@@ -82,7 +82,8 @@ exports.removerHorario = async (req, res) => {
 // --- NOVO: LISTAGEM SIMPLES PARA O CRUD ---
 exports.listarTodos = async (req, res) => {
     try {
-        const [rows] = await db.execute(`
+        const { perfil, empresaId } = req.usuario;
+        let query = `
             SELECT
                 s.id,
                 s.nome,
@@ -91,8 +92,17 @@ exports.listarTodos = async (req, res) => {
                 e.nome as empresa_nome
             FROM setores s
             JOIN empresas e ON s.empresa_id = e.id
-            ORDER BY e.nome, s.nome
-        `);
+        `;
+        const params = [];
+
+        if (perfil === 'CLIENTE') {
+            query += ` WHERE s.empresa_id = ? `;
+            params.push(empresaId);
+        }
+
+        query += ` ORDER BY e.nome, s.nome`;
+
+        const [rows] = await db.execute(query, params);
         res.json(keysToCamel(rows));
     } catch (error) {
         res.status(500).json({ message: 'Erro ao listar setores' });

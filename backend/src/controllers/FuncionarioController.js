@@ -167,10 +167,24 @@ exports.toggleStatusOriginal = async (req, res) => {
 // --- EXCLUIR DEFINITIVAMENTE ---
 exports.excluir = async (req, res) => {
     const { id } = req.params;
+    const { perfil, empresaId } = req.usuario;
+
     try {
+        // SEGURANÇA: Se perfil for CLIENTE, valida se o funcionário pertence à sua empresa
+        if (perfil === 'CLIENTE') {
+            const [check] = await db.execute(`
+                SELECT f.id
+                FROM funcionarios f
+                JOIN setores s ON f.setor_id = s.id
+                WHERE f.id = ? AND s.empresa_id = ?
+            `, [id, empresaId]);
+
+            if (check.length === 0) {
+                return res.status(403).json({ message: 'Sem permissão para excluir funcionário de outra empresa.' });
+            }
+        }
+
         // Cuidado: Se tiver pedidos, vai dar erro de chave estrangeira (o que é bom para segurança)
-        // Se quiser permitir excluir mesmo com pedidos, teria que apagar os pedidos antes.
-        // Por segurança, vamos deixar o banco bloquear se tiver histórico.
         await db.execute('DELETE FROM funcionarios WHERE id = ?', [id]);
         res.json({ message: 'Funcionário excluído.' });
     } catch (error) {
@@ -255,8 +269,20 @@ exports.salvarManual = async (req, res) => {
         }
 
         if (id) {
-            // Edição... (verificar se o funcionário pertence à empresa antes de editar seria bom, mas o filtro de listagem já ajuda)
-            // Para segurança máxima, adicione um WHERE no update checando a empresa via join, mas vamos simplificar:
+            // SEGURANÇA: Se for CLIENTE editando, garante que o funcionário atual pertence à empresa dele
+            if (perfil === 'CLIENTE') {
+                const [pertence] = await db.execute(`
+                    SELECT f.id
+                    FROM funcionarios f
+                    JOIN setores s ON f.setor_id = s.id
+                    WHERE f.id = ? AND s.empresa_id = ?
+                `, [id, usuarioEmpresaId]);
+
+                if (pertence.length === 0) {
+                    return res.status(403).json({ message: 'Sem permissão para alterar funcionário de outra empresa.' });
+                }
+            }
+
             await db.execute(`
                 UPDATE funcionarios
                 SET nome=?, ra_cpf=?, setor_id=?, data_nascimento=?,

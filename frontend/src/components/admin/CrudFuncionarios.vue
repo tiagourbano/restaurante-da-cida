@@ -35,59 +35,23 @@ const form = ref({
 
 // --- CARREGAMENTOS ---
 const carregarAuxiliares = async () => {
-  // Se for CLIENTE, não precisa buscar lista de todas as empresas
-  if (!isClient.value) {
-      const resEmp = await api.get('/admin/empresas');
-      empresas.value = resEmp.data;
-  } else {
-      // Se for cliente, simulamos a lista com apenas a empresa dele (para os selects funcionarem)
-      // Precisamos do nome da empresa. Se não tiver no usuario store, buscamos.
-      // Vou assumir que vamos buscar lista de empresas filtrada pelo backend (que criamos rota no passo anterior /admin/empresas/simples que o cliente pode acessar? Se não, o select fica vazio)
-
-      // SOLUÇÃO: Vamos fazer o backend retornar a lista de empresas filtrada para o cliente também
-      // Ou simplesmente deixamos vazio e travamos o ID.
-      try {
-          // Tenta buscar empresas (o backend deve retornar só a dele ou todas)
-          // Se o backend bloquear /admin/empresas para cliente, vai dar erro.
-          // Vamos assumir que você ajustou o EmpresaController ou usamos uma lógica manual:
-          // Se for cliente, a lista de empresas terá 1 item só.
-
-          // Recomendo usar a rota /admin/empresas/simples e garantir que o backend filtra ela.
-          const resEmp = await api.get('/admin/empresas/simples');
-          empresas.value = resEmp.data;
-      } catch (e) {
-          console.log('Erro ao carregar empresas');
-      }
+  try {
+    const resEmp = await api.get('/admin/empresas/simples');
+    empresas.value = resEmp.data;
+  } catch (e) {
+    console.log('Erro ao carregar empresas', e);
   }
 
-  // Carrega setores (o backend já deve filtrar setores por empresa se for cliente? Vamos checar)
-  // O ideal é a rota /admin/setores retornar tudo e o backend filtrar se for CLIENTE.
-  const resSet = await api.get('/admin/setores');
-
-  // A rota /admin/setores atual retorna hierarquia.
-  // O ideal seria ter uma rota simples, mas vamos "achatá-la" aqui se necessário
-  // Vou assumir que você vai criar um endpoint simples ou ajustar o retorno.
-  // SE SUA ROTA /admin/setores RETORNA A HIERARQUIA, use este código para achatar:
-  const setoresPlanos = [];
-  resSet.data.forEach(setorOuEmpresa => {
-     // Se sua rota retorna o formato hierarquico do passo anterior, ajuste aqui.
-     // Se for o formato lista simples, apenas atribua.
-     // VOU SUPOR QUE VOCE VAI USAR A ROTA DE HIERARQUIA QUE CRIAMOS:
-     if(setorOuEmpresa.horarios) { // É aquele objeto hierárquico
-        setoresPlanos.push({
-           id: setorOuEmpresa.id,
-           nome: setorOuEmpresa.nome,
-           empresaNome: setorOuEmpresa.empresaNome,
-           // Precisamos do ID da empresa pra filtrar no form.
-           // Se a rota hierarquica nao traz o ID da empresa explicito, vamos ter problema.
-           // SUGESTÃO: Vamos usar a lista de setores dentro do form filtrando visualmente
-        });
-     }
-  });
-
-  // *AJUSTE RÁPIDO*: Para não complicar, vamos fazer o seguinte:
-  // No form, ao selecionar empresa, buscamos os setores dela, ok?
-  // Para a listagem, vamos usar o endpoint de listagem.
+  try {
+    const resSet = await api.get('/admin/setores');
+    todosSetores.value = resSet.data.map(s => ({
+      id: s.id,
+      nome: s.nome,
+      empresaId: s.empresaId
+    }));
+  } catch (e) {
+    console.log('Erro ao carregar setores', e);
+  }
 };
 
 const buscarFuncionarios = async () => {
@@ -181,27 +145,7 @@ const setoresFiltradosNoForm = computed(() => {
 });
 
 onMounted(async () => {
-  // Carrega empresas
-  const r1 = await api.get('/admin/empresas');
-  empresas.value = r1.data;
-
-  // PRECISAMOS DE UMA ROTA QUE LISTE SETORES COM EMPRESA_ID
-  // Vou simular chamando a rota de hierarquia e desmontando ela, ou crie uma rota simples.
-  // Vamos usar a rota hierarquica /admin/setores e adaptar:
-  const r2 = await api.get('/admin/setores');
-  // O retorno de /admin/setores (hierarquico) é um array de setores.
-  // Se fizemos o `listarComHorarios` ele retorna [{ id, nome, empresaNome, ... }]
-  // Mas não retorna o empresaId explicitamente se não colocamos na query.
-  // **IMPORTANTE**: Certifique-se que o endpoint /admin/setores retorna o empresaId.
-  todosSetores.value = r2.data.map(s => ({
-      id: s.id, // ou s.setorId dependendo da sua query anterior
-      nome: s.nome || s.setorNome,
-      // Aqui precisariamos do ID da empresa.
-      // Se não tiver vindo, o filtro do form vai falhar.
-      // DICA: No SetorController.js adicione 'e.id as empresa_id' no select do listarComHorarios
-      empresaId: s.empresaId || 999
-  }));
-
+  await carregarAuxiliares();
   buscarFuncionarios();
 });
 
