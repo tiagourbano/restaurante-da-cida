@@ -6,6 +6,15 @@ import EditarPedidoModal from '../components/admin/EditarPedidoModal.vue';
 import ResumoImpressao from '../components/admin/ResumoImpressao.vue';
 import NovoPedidoAdminModal from '../components/admin/NovoPedidoAdminModal.vue';
 
+const vIndeterminate = {
+  mounted(el, binding) {
+    el.indeterminate = Boolean(binding.value);
+  },
+  updated(el, binding) {
+    el.indeterminate = Boolean(binding.value);
+  }
+};
+
 const pedidosRaw = ref([]);
 const loading = ref(true);
 const pedidoParaEditar = ref(null);
@@ -19,7 +28,8 @@ const filtros = ref({
   data: new Date().toISOString().split('T')[0],
   empresaId: '',
   setorId: '',
-  janelaSelecionada: '' // String JSON {inicio, fim}
+  janelaSelecionada: '', // String JSON {inicio, fim}
+  statusEtiqueta: 'todos' // 'todos', 'pendentes', 'impressos'
 });
 
 // Limpa os filtros filhos quando o pai muda
@@ -185,6 +195,14 @@ const pedidosFiltrados = computed(() => {
        }
     }
 
+    // 4. Filtro Status de Impressão da Etiqueta
+    if (filtros.value.statusEtiqueta === 'pendentes' && p.etiquetaImpressa) {
+       return false;
+    }
+    if (filtros.value.statusEtiqueta === 'impressos' && !p.etiquetaImpressa) {
+       return false;
+    }
+
     return true;
   });
 });
@@ -209,13 +227,71 @@ const pedidosAgrupados = computed(() => {
   return grupos;
 });
 
+// --- LÓGICA DE STATUS DE IMPRESSÃO ---
+const marcarEtiquetaIndividual = async (pedido, statusDesejado) => {
+  const antigo = pedido.etiquetaImpressa;
+  pedido.etiquetaImpressa = statusDesejado;
+
+  try {
+    await api.patch(`/admin/pedidos/${pedido.pedidoId}/etiqueta`, {
+      etiquetaImpressa: statusDesejado
+    });
+  } catch (error) {
+    console.error('Erro ao atualizar status da etiqueta:', error);
+    pedido.etiquetaImpressa = antigo;
+    alert('Erro ao salvar status da etiqueta.');
+  }
+};
+
+const marcarEtiquetasSetor = async (pedidosDoSetor, marcarComo) => {
+  const pedidosAlterar = pedidosDoSetor.filter(p => !!p.etiquetaImpressa !== marcarComo);
+  if (pedidosAlterar.length === 0) return;
+
+  const backup = pedidosAlterar.map(p => ({ pedido: p, status: p.etiquetaImpressa }));
+  pedidosAlterar.forEach(p => { p.etiquetaImpressa = marcarComo; });
+
+  try {
+    await api.patch('/admin/pedidos/etiquetas-lote', {
+      pedidoIds: pedidosAlterar.map(p => p.pedidoId),
+      etiquetaImpressa: marcarComo
+    });
+  } catch (error) {
+    console.error('Erro ao atualizar status do lote:', error);
+    backup.forEach(b => { b.pedido.etiquetaImpressa = b.status; });
+    alert('Erro ao atualizar status das etiquetas em lote.');
+  }
+};
+
+const toggleSetorCheckbox = async (setor) => {
+  const todosMarcados = setor.pedidos.length > 0 && setor.pedidos.every(p => p.etiquetaImpressa);
+  const novoStatus = !todosMarcados;
+  await marcarEtiquetasSetor(setor.pedidos, novoStatus);
+};
+
+const getSetorCheckboxState = (pedidos) => {
+  if (!pedidos || pedidos.length === 0) return { checked: false, indeterminate: false };
+  const impressos = pedidos.filter(p => p.etiquetaImpressa).length;
+  if (impressos === 0) return { checked: false, indeterminate: false };
+  if (impressos === pedidos.length) return { checked: true, indeterminate: false };
+  return { checked: false, indeterminate: true };
+};
+
 // --- LÓGICA DE IMPRESSÃO ---
-const imprimirLote = async (pedidosDoSetor) => {
-  loteParaImpressao.value = pedidosDoSetor;
+const imprimirLote = async (pedidosParaImprimir, marcarAutomatico = true) => {
+  if (!pedidosParaImprimir || pedidosParaImprimir.length === 0) return;
+
+  loteParaImpressao.value = pedidosParaImprimir;
   isImprimindo.value = true;
   await nextTick();
   window.print();
   setTimeout(() => { isImprimindo.value = false; loteParaImpressao.value = []; }, 1000);
+
+  if (marcarAutomatico) {
+    const pendentes = pedidosParaImprimir.filter(p => !p.etiquetaImpressa);
+    if (pendentes.length > 0) {
+      marcarEtiquetasSetor(pendentes, true);
+    }
+  }
 };
 
 const imprimirResumo = async (titulo, dadosTotais) => {
@@ -327,6 +403,27 @@ onMounted(carregarDados);
             </select>
          </div>
 
+         <div class="grupo-filtro">
+            <label>🏷️ Status Etiquetas:</label>
+            <div class="filtro-status-etiquetas">
+               <button
+                 type="button"
+                 :class="['btn-status', { ativo: filtros.statusEtiqueta === 'todos' }]"
+                 @click="filtros.statusEtiqueta = 'todos'"
+               >Todos</button>
+               <button
+                 type="button"
+                 :class="['btn-status btn-status-pendente', { ativo: filtros.statusEtiqueta === 'pendentes' }]"
+                 @click="filtros.statusEtiqueta = 'pendentes'"
+               >⏳ Pendentes</button>
+               <button
+                 type="button"
+                 :class="['btn-status btn-status-impresso', { ativo: filtros.statusEtiqueta === 'impressos' }]"
+                 @click="filtros.statusEtiqueta = 'impressos'"
+               >✅ Impressos</button>
+            </div>
+         </div>
+
          <div class="separador"></div>
 
          <div class="switch-mode">
@@ -356,18 +453,56 @@ onMounted(carregarDados);
           <div v-if="empresasAbertas.has(emp.id)" class="empresa-body">
              <div v-for="set in emp.setores" :key="set.setorNome" class="box-setor">
                 <div class="setor-info">
-                   <h4>{{ set.setorNome }}</h4>
-                   <small>{{ set.pedidos.length }} pedidos</small>
+                   <div class="setor-titulo-com-check">
+                      <input
+                        type="checkbox"
+                        class="check-setor"
+                        :checked="getSetorCheckboxState(set.pedidos).checked"
+                        v-indeterminate="getSetorCheckboxState(set.pedidos).indeterminate"
+                        @change="toggleSetorCheckbox(set)"
+                        title="Marcar / Desmarcar todas do setor"
+                      />
+                      <h4>{{ set.setorNome }}</h4>
+                   </div>
+                   <small class="setor-subinfo">
+                      {{ set.pedidos.length }} pedidos
+                      <span class="status-contagem">
+                        ({{ set.pedidos.filter(p => p.etiquetaImpressa).length }} impressos /
+                        {{ set.pedidos.filter(p => !p.etiquetaImpressa).length }} pendentes)
+                      </span>
+                   </small>
                 </div>
                 <div class="setor-acoes">
-                   <button @click.stop="imprimirLote(set.pedidos)" class="btn-imprimir-lote">
-                      🖨️ Etiquetas
+                   <button
+                     v-if="set.pedidos.some(p => !p.etiquetaImpressa) && set.pedidos.some(p => p.etiquetaImpressa)"
+                     @click.stop="imprimirLote(set.pedidos.filter(p => !p.etiquetaImpressa))"
+                     class="btn-imprimir-pendentes"
+                     title="Imprimir apenas pedidos novos/pendentes"
+                   >
+                      ⚡ Pendentes ({{ set.pedidos.filter(p => !p.etiquetaImpressa).length }})
+                   </button>
+                   <button @click.stop="imprimirLote(set.pedidos)" class="btn-imprimir-lote" title="Imprimir todas as etiquetas do setor">
+                      🖨️ Etiquetas (Todas)
                    </button>
                 </div>
                 <ul class="lista-nomes">
-                  <li v-for="p in set.pedidos" :key="p.pedidoId">
+                  <li
+                    v-for="p in set.pedidos"
+                    :key="p.pedidoId"
+                    :class="['item-pedido', p.etiquetaImpressa ? 'pedido-impresso' : 'pedido-pendente']"
+                  >
+                    <input
+                      type="checkbox"
+                      class="check-pedido"
+                      :checked="!!p.etiquetaImpressa"
+                      @change="marcarEtiquetaIndividual(p, $event.target.checked)"
+                      :title="p.etiquetaImpressa ? 'Etiqueta já impressa (clique para desmarcar)' : 'Marcar como impressa'"
+                    />
+                    <span v-if="!p.etiquetaImpressa" class="badge-tag tag-pendente">Novo</span>
+                    <span v-else class="badge-tag tag-impresso">✓</span>
+
                     <span v-if="p.isAniversariante" title="Aniversariante do Dia!" style="font-size: 1.2em; margin-right: 5px;">🎂</span>
-                    {{ p.funcionarioNome }} <span class="detalhe-tam">({{ p.tamanhoNome }})</span>
+                    <span class="nome-funcionario">{{ p.funcionarioNome }}</span> <span class="detalhe-tam">({{ p.tamanhoNome }})</span>
                     <span v-if="p.observacao || p.opcoesEscolhidasString" class="tem-obs">⚠️</span>
                     <button @click.stop="abrirEdicao(p.pedidoId)" class="btn-editar">✏️</button>
                     <button @click.stop="excluirPedido(p.pedidoId)" class="btn-acao excluir" title="Excluir">🗑️</button>
@@ -439,11 +574,39 @@ h1 { margin: 0; color: #2c3e50; font-size: 1.8rem; }
 .card-empresa { border: 1px solid #ddd; margin-bottom: 15px; border-radius: 8px; background: white; overflow: hidden; }
 .empresa-header { padding: 15px; background: #f8f9fa; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
 .empresa-body { padding: 15px; border-top: 1px solid #eee; }
-.box-setor { margin-bottom: 15px; border: 1px solid #eee; padding: 10px; border-radius: 6px; }
+.box-setor { margin-bottom: 15px; border: 1px solid #eee; padding: 12px; border-radius: 6px; }
+.setor-info { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
+.setor-titulo-com-check { display: flex; align-items: center; gap: 8px; }
+.setor-titulo-com-check h4 { margin: 0; font-size: 1.1rem; color: #2c3e50; }
+.check-setor { width: 18px; height: 18px; cursor: pointer; accent-color: #27ae60; }
+.setor-subinfo { color: #666; font-size: 0.85rem; }
+.status-contagem { font-weight: 500; color: #555; margin-left: 4px; }
+.setor-acoes { display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+
+.filtro-status-etiquetas { display: inline-flex; background: #e2e8f0; border-radius: 6px; padding: 2px; gap: 2px; }
+.btn-status { border: none; background: transparent; padding: 6px 12px; border-radius: 4px; font-size: 0.8rem; font-weight: 600; color: #475569; cursor: pointer; transition: all 0.15s ease; }
+.btn-status.ativo { background: white; color: #1e293b; box-shadow: 0 1px 3px rgba(0,0,0,0.12); }
+.btn-status-pendente.ativo { color: #d97706; }
+.btn-status-impresso.ativo { color: #16a34a; }
+
+.btn-imprimir-pendentes { background: #e67e22; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 2px 4px rgba(230, 126, 34, 0.3); }
+.btn-imprimir-pendentes:hover { background: #d35400; }
+
+.btn-imprimir-lote { background: #27ae60; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+.btn-imprimir-lote:hover { background: #219653; }
+
 .lista-nomes { margin-top: 10px; list-style: none; padding: 0; display: flex; flex-wrap: wrap; gap: 10px; }
-.lista-nomes li { background: #f5f5f5; padding: 4px 10px; border-radius: 4px; font-size: 0.9rem; }
-.btn-editar { border: none; background: none; cursor: pointer; margin-left: 5px; }
-.btn-imprimir-lote { background: #42b983; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+.lista-nomes li.item-pedido { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 6px; font-size: 0.9rem; border: 1px solid #e0e0e0; transition: all 0.2s ease; }
+.item-pedido.pedido-pendente { background: #fffbeb; border-color: #fde68a; box-shadow: 0 1px 3px rgba(217, 119, 6, 0.08); }
+.item-pedido.pedido-impresso { background: #f8fafc; border-color: #e2e8f0; opacity: 0.85; }
+.item-pedido.pedido-impresso:hover { opacity: 1; }
+
+.check-pedido { width: 16px; height: 16px; cursor: pointer; accent-color: #27ae60; }
+.badge-tag { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; padding: 2px 5px; border-radius: 3px; letter-spacing: 0.5px; }
+.tag-pendente { background: #fef3c7; color: #b45309; border: 1px solid #fcd34d; }
+.tag-impresso { background: #dcfce7; color: #15803d; border: 1px solid #86efac; }
+.nome-funcionario { font-weight: 500; }
+.btn-editar { border: none; background: none; cursor: pointer; margin-left: 2px; }
 .card-resumo { margin-bottom: 20px; border: 1px solid #ccc; border-radius: 8px; background: white; overflow: hidden; }
 .resumo-header { background: #fff3e0; padding: 15px; display: flex; justify-content: space-between; }
 .box-setor-cozinha { margin: 10px; border: 1px solid #eee; border-radius: 6px; }

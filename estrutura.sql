@@ -75,6 +75,7 @@ CREATE TABLE pedidos (
     observacao TEXT,
     data_pedido TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     status ENUM('PENDENTE', 'EM_PREPARO', 'ENTREGUE', 'CANCELADO') DEFAULT 'PENDENTE',
+    etiqueta_impressa BOOLEAN DEFAULT FALSE,
 
     FOREIGN KEY (funcionario_id) REFERENCES funcionarios(id),
     FOREIGN KEY (cardapio_id) REFERENCES cardapios(id),
@@ -124,3 +125,6 @@ ADD COLUMN pedido_duplo_ativo BOOLEAN DEFAULT FALSE,
 ADD COLUMN dia_semana_liberacao INT NULL COMMENT '0=Dom, 1=Seg, 2=Ter, 3=Qua, 4=Qui, 5=Sex, 6=Sab',
 ADD COLUMN pulo_dias_marmita_1 INT DEFAULT 0 COMMENT 'Geralmente 0 para o dia alvo base',
 ADD COLUMN pulo_dias_marmita_2 INT DEFAULT 2 COMMENT 'Padrão 2 dias para a segunda marmita';
+
+ALTER TABLE pedidos
+ADD COLUMN etiqueta_impressa BOOLEAN DEFAULT FALSE;

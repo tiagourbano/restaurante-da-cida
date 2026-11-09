@@ -19,6 +19,7 @@ exports.getPedidosDoDia = async (req, res) => {
                 p.id as pedido_id,
                 p.data_pedido,
                 p.observacao,
+                p.etiqueta_impressa,
                 t.nome as tamanho_nome,
                 f.nome as funcionario_nome,
                 s.nome as setor_nome,
@@ -231,5 +232,39 @@ exports.criarPedidoManual = async (req, res) => {
         res.status(500).json({ message: error.message || 'Erro ao criar pedido manual.' });
     } finally {
         connection.release();
+    }
+};
+
+// Atualiza o status de impressão de uma etiqueta individual
+exports.atualizarStatusEtiqueta = async (req, res) => {
+    const { id } = req.params;
+    const { etiquetaImpressa } = req.body;
+
+    try {
+        await db.execute('UPDATE pedidos SET etiqueta_impressa = ? WHERE id = ?', [etiquetaImpressa ? 1 : 0, id]);
+        res.json({ message: 'Status da etiqueta atualizado com sucesso.' });
+    } catch (error) {
+        console.error(`[API] ${error}`);
+        res.status(500).json({ message: 'Erro ao atualizar status da etiqueta.' });
+    }
+};
+
+// Atualiza o status de impressão de múltiplos pedidos em lote
+exports.atualizarStatusEtiquetasLote = async (req, res) => {
+    const { pedidoIds, etiquetaImpressa } = req.body;
+
+    if (!Array.isArray(pedidoIds) || pedidoIds.length === 0) {
+        return res.status(400).json({ message: 'Nenhum pedido informado.' });
+    }
+
+    try {
+        const placeholders = pedidoIds.map(() => '?').join(',');
+        const query = `UPDATE pedidos SET etiqueta_impressa = ? WHERE id IN (${placeholders})`;
+        await db.execute(query, [etiquetaImpressa ? 1 : 0, ...pedidoIds]);
+
+        res.json({ message: 'Status das etiquetas atualizado com sucesso.' });
+    } catch (error) {
+        console.error(`[API] ${error}`);
+        res.status(500).json({ message: 'Erro ao atualizar status das etiquetas em lote.' });
     }
 };

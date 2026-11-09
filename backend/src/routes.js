@@ -33,6 +33,8 @@ router.get('/setup-admin', AuthController.criarAdminInicial);
 router.get('/setup-admin/senha', AuthController.gerarSenhaCriptografada);
 router.post('/admin/login', AuthController.loginAdmin);
 router.get('/admin/pedidos', authMiddleware, AdminController.getPedidosDoDia);
+router.patch('/admin/pedidos/etiquetas-lote', authMiddleware, AdminController.atualizarStatusEtiquetasLote);
+router.patch('/admin/pedidos/:id/etiqueta', authMiddleware, AdminController.atualizarStatusEtiqueta);
 router.get('/admin/pedidos/:id', authMiddleware, AdminController.getDetalhesPedido);
 router.put('/admin/pedidos/:id', authMiddleware, AdminController.atualizarPedido);
 router.delete('/admin/pedidos/:id', authMiddleware, AdminController.excluirPedido);
